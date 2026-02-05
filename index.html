@@ -1,0 +1,2288 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>SBTS - Smart Blind Tracking System</title>
+<link href="manifest.json" rel="manifest"/>
+<link href="icon.svg" rel="icon" type="image/svg+xml"/>
+<link href="icon-192.png" rel="icon" sizes="192x192" type="image/png"/>
+<link href="icon-192.png" rel="apple-touch-icon"/>
+<link href="styles.css" rel="stylesheet"/>
+<script src="https://unpkg.com/@phosphor-icons/web"></script>
+<!-- Supabase (Live Pilot) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+</head>
+<body>
+<!-- SBTS Inline SVG Icons (Notification Categories) -->
+<svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden" xmlns="http://www.w3.org/2000/svg">
+<symbol id="sbts-ico-action" viewbox="0 0 24 24">
+<path d="M10.2 17.6 5.6 13l1.4-1.4 3.2 3.2 6.8-6.8L18.4 9z" fill="currentColor"></path>
+<path d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2Zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16Z" fill="currentColor"></path>
+</symbol>
+<symbol id="sbts-ico-system" viewbox="0 0 24 24">
+<path d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2Zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16Z" fill="currentColor"></path>
+<path d="M11 10h2v7h-2zM11 7h2v2h-2z" fill="currentColor"></path>
+</symbol>
+<symbol id="sbts-ico-warning" viewbox="0 0 24 24">
+<path d="M12 3 1 21h22L12 3Zm0 4.1 7.5 12.9h-15L12 7.1Z" fill="currentColor"></path>
+<path d="M11 10h2v5h-2zM11 16.5h2v2h-2z" fill="currentColor"></path>
+</symbol>
+<symbol id="sbts-ico-admin" viewbox="0 0 24 24">
+<path d="M4 4h16v10H7.2L4 17.2V4Zm2 2v6.8L6.8 12H18V6H6Z" fill="currentColor"></path>
+<path d="M8 8h8v2H8zM8 11h6v2H8z" fill="currentColor"></path>
+</symbol>
+<symbol id="ico-open" viewbox="0 0 24 24">
+<path d="M14 3h7v7h-2V6.4l-8.3 8.3-1.4-1.4L17.6 5H14V3z" fill="currentColor"></path>
+<path d="M5 5h7v2H7v10h10v-5h2v7H5V5z" fill="currentColor"></path>
+</symbol>
+<symbol id="ico-done" viewbox="0 0 24 24">
+<path d="M9.0 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z" fill="currentColor"></path>
+</symbol>
+<symbol id="ico-archive" viewbox="0 0 24 24">
+<path d="M20 6H4V4h16v2zm-1 3v11H5V9h14zm-9 3v3h4v-3h-4z" fill="currentColor"></path>
+</symbol>
+<symbol id="ico-restore" viewbox="0 0 24 24">
+<path d="M12 6a6 6 0 1 1-5.65 8H4.2A8 8 0 1 0 12 4v2z" fill="currentColor"></path>
+<path d="M6 6H3v-3h2v1.2A9.2 9.2 0 0 1 12 2v2A7.2 7.2 0 0 0 6.6 5.4H6z" fill="currentColor"></path>
+</symbol>
+</svg>
+<!-- AUTH -->
+<div class="auth-container hidden" id="authContainer">
+<div class="auth-card">
+<div class="auth-header">
+<div class="auth-logo-circle" id="authLogoCircle">SB</div>
+<div class="auth-title">Smart Blind Tracking System</div>
+<div class="auth-subtitle">Local by default. If Supabase Live Mode is configured, login uses Email/Password.</div>
+</div>
+<!-- LOGIN -->
+<div id="loginForm">
+<div class="auth-body">
+<div class="auth-label">Username</div>
+<input class="auth-input" id="login_username" placeholder="email (Live) or username (Local)" type="text"/>
+<div class="auth-label">Password</div>
+<input class="auth-input" id="login_password" placeholder="admin123" type="password"/>
+<button class="auth-btn-primary" onclick="handleLogin()">
+<i class="ph ph-sign-in"></i> Login
+          </button>
+<div class="auth-footer-text">
+            No account?
+            <span class="auth-link" onclick="openRegister()">Register</span>
+</div>
+</div>
+</div>
+<!-- REGISTER -->
+<div class="hidden" id="registerForm">
+<div class="auth-body">
+<div class="auth-label">Full name *</div>
+<input class="auth-input" id="reg_fullName" placeholder="Your name" type="text"/>
+<div class="auth-label">Username *</div>
+<input class="auth-input" id="reg_username" placeholder="username" type="text"/>
+<div class="auth-label">Password *</div>
+<input class="auth-input" id="reg_password" placeholder="password" type="password"/>
+<div class="auth-label">Phone</div>
+<input class="auth-input" id="reg_phone" placeholder="+966..." type="text"/>
+<div class="auth-label">Email</div>
+<input class="auth-input" id="reg_email" placeholder="name@email.com" type="email"/>
+<div class="auth-label">Role *</div>
+<select class="auth-input" id="reg_role">
+<option value="coordinator">Coordinator</option>
+<option value="technician">Technician</option>
+<option value="safety">Safety</option>
+<option value="qc">QC</option>
+<option value="inspection">Inspection</option>
+<option value="ti_engineer">T&amp;I Engineer</option>
+<option value="operation_foreman">Operation Foreman</option>
+<option value="metal_foreman">Metal Foreman</option>
+</select>
+<button class="auth-btn-primary" onclick="handleRegister()">
+<i class="ph ph-user-plus"></i> Register
+          </button>
+<div class="auth-footer-text">
+            Already have account?
+            <span class="auth-link" onclick="openLogin()">Login</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- PUBLIC / VISITOR (QR) -->
+<div class="public hidden" id="publicContainer">
+<header class="public-top">
+<div class="public-brand">
+<div class="public-badge" id="publicBadge">SB</div>
+<div>
+<div class="public-title" id="publicProgramTitle">Smart Blind Tag System</div>
+<div class="public-sub" id="publicSiteName">Visitor view</div>
+</div>
+</div>
+<div class="public-actions">
+<button class="btn-secondary" onclick="goHomeFromPublic()">Back</button>
+<button class="btn-primary" onclick="publicLogin()">Login</button>
+</div>
+</header>
+<main class="public-main">
+<div class="public-card">
+<div class="public-card-title">Blind Quick View</div>
+<div class="public-grid">
+<div>
+<div class="kv"><span>Blind</span><b id="pub_blindName">-</b></div>
+<div class="kv"><span>Area</span><b id="pub_area">-</b></div>
+<div class="kv"><span>Project</span><b id="pub_project">-</b></div>
+<div class="kv"><span>Line / Equipment</span><b id="pub_line">-</b></div>
+<div class="kv"><span>Type</span><b id="pub_type">-</b></div>
+<div class="kv"><span>Size</span><b id="pub_size">-</b></div>
+<div class="kv"><span>Rate</span><b id="pub_rate">-</b></div>
+<div class="kv"><span>Current phase</span><b class="phase-pill" id="pub_phase">-</b></div>
+</div>
+<div class="public-qr">
+<div class="public-qr-title">QR</div>
+<img alt="QR" class="qr-img" id="pub_qrImg"/>
+<div class="qr-link" id="pub_link">-</div>
+<button class="btn-secondary" onclick="copyPublicLink()">Copy link</button>
+</div>
+</div>
+<div class="public-section">
+<div class="public-section-title">Approval status</div>
+<div class="public-approvals" id="pub_approvals">-</div>
+</div>
+<div class="public-section">
+<div class="public-section-title">History log</div>
+<table class="main-table">
+<thead>
+<tr><th>Date</th><th>From</th><th>To</th><th>By</th></tr>
+</thead>
+<tbody id="pub_history"></tbody>
+</table>
+</div>
+<div class="public-note">
+          Visitor view is read-only. If you are a responsible role (phase owner / admin), click <b>Login</b>.
+        </div>
+</div>
+</main>
+</div>
+<!-- APP -->
+<div class="app hidden" id="appContainer">
+<!-- TOP HEADER (connected with sidebar like your design) -->
+<header class="topbar" id="topbar">
+<div class="topbar-left">
+<div class="topbar-badge" id="programLogoCircle">SB</div>
+<div class="topbar-texts">
+<div class="topbar-title" id="programTitleText"></div>
+<div class="topbar-sub" id="programSubtitleText"></div>
+</div>
+</div>
+<div class="topbar-center">
+<div class="topbar-center-title" id="siteTitleText">Shedgum Gas Plant</div>
+<div class="topbar-center-sub">
+<span id="siteSubtitleText">Smart Blind Tag System</span>
+</div>
+</div>
+<div class="topbar-right">
+<div class="topbar-right-texts">
+<div class="topbar-right-title" id="companyNameText"></div>
+<div class="topbar-right-sub" id="companySubText"></div>
+</div>
+<button class="icon-btn notif-bell" id="notifBellBtn" onclick="openNotificationsDrawer()" title="Notifications">
+<i class="ph ph-bell"></i>
+<span class="notif-badge hidden" id="notifBadge">0</span>
+<span class="notif-info-dot hidden" id="notifInfoDot"></span>
+</button>
+<div class="topbar-company-logo" id="companyLogoBox"></div>
+</div>
+</header>
+<div class="app-body">
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+<div class="sidebar-user" id="sidebarUserBox" title="Signed in user">
+<div class="sidebar-avatar" id="sidebarAvatar">U</div>
+<div class="sidebar-user-meta">
+<div class="sidebar-user-name" id="sidebarUserName">User</div>
+<div class="sidebar-user-role" id="sidebarUserRole">Role</div>
+</div>
+</div>
+<div class="sidebar-menu">
+<div class="menu-item active" onclick="openPage('dashboardPage')">
+<i class="ph ph-house"></i> Dashboard
+          </div>
+<div class="menu-item" onclick="openPage('areasPage')">
+<i class="ph ph-map-pin"></i> Areas
+          </div>
+<div class="menu-item" onclick="openPage('projectsPage')">
+<i class="ph ph-briefcase"></i> Projects
+          </div>
+<div class="menu-item" onclick="slipOpenDashboard()">
+<i class="ph ph-squares-four"></i> Slip Blind
+          </div>
+<div class="menu-item" id="menuReports" onclick="openPage('reportsPage')">
+<i class="ph ph-chart-bar"></i> Reports
+          </div>
+<div class="menu-item" id="menuReportsCards" onclick="openPage('reportsCardsPage')">
+<i class="ph ph-layout"></i> Reports Cards
+          </div>
+<div class="menu-item" id="menuWorkflowControl" onclick="openPage('workflowControlPage')">
+<i class="ph ph-flow-arrow"></i> Workflow Control
+          </div>
+<div class="menu-item" id="menuUsers" onclick="openPage('permissionsPage')">
+<i class="ph ph-users"></i> Users
+          </div>
+<div class="menu-item" id="menuCertificateSettings" onclick="openPage('certificateSettingsPage')">
+<i class="ph ph-certificate"></i> Certificate Settings
+          </div>
+<div class="menu-item" id="menuTagDesigner" onclick="openPage('tagDesignerPage')">
+<i class="ph ph-paint-brush"></i> Tag Designer
+          </div>
+<div class="menu-item" id="menuTrainingItem" onclick="openPage('trainingPage')">
+<i class="ph ph-book-open"></i> Training
+          </div>
+<div class="menu-item" id="menuSettings" onclick="openPage('settingsPage')">
+<i class="ph ph-gear"></i> Settings
+          </div>
+</div>
+<div class="sidebar-footer">
+<div class="sidebar-date" id="sidebarDate">--/--/----</div>
+<button class="logout-btn" onclick="logout()">
+<i class="ph ph-sign-out"></i> Logout
+          </button>
+<div class="sidebar-version">v1.0</div>
+</div>
+</aside>
+<!-- MAIN -->
+<div class="mobile-sidebar-overlay hidden" id="mobileSidebarOverlay" onclick="closeMobileSidebar()"></div>
+<main class="main-content">
+<!-- PAGE TOP BAR (Back + Breadcrumbs) - content only, sticky within scroll container -->
+<div class="page-topbar" id="pageTopbar">
+<button class="icon-btn mobile-only" id="mobileMenuBtn" onclick="toggleMobileSidebar(event)" title="Menu">
+<i class="ph ph-list"></i>
+</button>
+<button class="icon-btn page-back" id="pageBackBtn" onclick="navBack(event)" title="Back">
+<i class="ph ph-arrow-left"></i>
+</button>
+<div aria-label="Breadcrumb" class="nav-trail" id="navTrail"></div>
+</div>
+<!-- DASHBOARD -->
+<section class="page" id="dashboardPage">
+<div class="page-title">Dashboard</div>
+<div class="stats-row">
+<div class="stat-card">
+<div class="stat-title">Areas</div>
+<div class="stat-value" id="stat_totalAreas">0</div>
+</div>
+<div class="stat-card">
+<div class="stat-title">Projects</div>
+<div class="stat-value" id="stat_totalProjects">0</div>
+</div>
+<div class="stat-card">
+<div class="stat-title">Total blinds</div>
+<div class="stat-value" id="stat_totalBlinds">0</div>
+</div>
+<div class="stat-card">
+<div class="stat-title">Your phase changes</div>
+<div class="stat-value" id="stat_phaseChanges">0</div>
+</div></div>
+<h2 class="section-title">Blinds per phase (all projects)</h2>
+<div class="phase-grid" id="dashboardPhaseCounters"></div>
+<div class="dash-section-wrap" id="dashboardSlipSummaryWrap">
+<div class="section-title-row" style="margin-top:10px;">
+<h2 class="section-title" style="margin:0;">Slip blinds summary (all projects)</h2>
+<button aria-expanded="true" class="section-toggle-btn" id="toggleSlipSummaryBtn" title="Hide / Show" type="button">
+<span class="chev">▾</span>
+</button>
+</div>
+<div class="slip-summary-row" id="dashboardSlipSummaryRow">
+<div class="phase-grid slip-kpi-grid" id="dashboardSlipKpis"></div>
+<div class="slip-overview-card" id="dashboardSlipOverview"></div>
+</div>
+</div>
+<div class="dash-section-wrap" id="dashboardRecentActivityWrap" style="margin-top:14px;">
+<div class="section-title-row">
+<h2 class="section-title" style="margin:0;">Recent Activity</h2>
+<button aria-expanded="true" class="section-toggle-btn" id="toggleRecentActivityBtn" title="Hide / Show" type="button">
+<span class="chev">▾</span>
+</button>
+</div>
+<div class="recent-activity-card" id="dashboardRecentActivityCard">
+<div class="recent-activity-list" id="dashboardRecentActivity"></div>
+<div class="recent-activity-footer">
+<a class="recent-activity-link" href="#" id="dashboardViewAllActivity">View all activity</a>
+</div>
+</div>
+</div>
+</section>
+<!-- AREAS -->
+<section class="page hidden" id="areasPage">
+<div class="page-title">Areas</div>
+<div class="page-actions">
+<button class="btn-neutral" onclick="openAddAreaModal()">
+<i class="ph ph-plus"></i> Add area
+            </button>
+</div>
+<table class="main-table">
+<thead>
+<tr>
+<th>#</th>
+<th>Area name</th>
+<th>Projects</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody id="areasTableBody"></tbody>
+</table>
+</section>
+<!-- PROJECTS -->
+<section class="page hidden" id="projectsPage">
+<div class="page-title">Projects</div>
+<div class="page-actions">
+<button class="btn-neutral" onclick="openAddProjectModal()">
+<i class="ph ph-plus"></i> Add project
+            </button>
+</div>
+<table class="main-table">
+<thead>
+<tr>
+<th>#</th>
+<th>Project</th>
+<th>Area</th>
+<th>Blinds</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody id="projectsTableBody"></tbody>
+</table>
+</section>
+<!-- PROJECT DETAILS -->
+<section class="page hidden" id="projectDetailsPage">
+<div class="page-title" id="projectDetailsTitle">Project</div>
+<div class="subtabs">
+<button class="subtab active" id="projTabBlindsBtn" onclick="openProjectSubTab('blinds')" type="button">
+              Blinds
+            </button>
+<button class="subtab" id="projTabSettingsBtn" onclick="openProjectSubTab('settings')" type="button">
+              Project Settings
+            </button>
+</div>
+<div id="projectSubTabBlinds">
+<div class="project-summary">
+<div class="summary-item">
+<div class="summary-label">Area</div>
+<div class="summary-value" id="projectDetailArea">-</div>
+</div>
+<div class="summary-item">
+<div class="summary-label">Total blinds</div>
+<div class="summary-value" id="projectDetailBlinds">0</div>
+</div>
+<div class="summary-item">
+<div class="summary-label">Completed (Inspection &amp; Ready)</div>
+<div class="summary-value" id="projectDetailCompleted">0</div>
+</div>
+</div>
+<div class="page-actions">
+<button class="btn-neutral" onclick="openAddSingleBlindModal()">
+<i class="ph ph-plus"></i> Add blind
+            </button>
+<button class="secondary-btn" onclick="openBulkAddBlindsModal()">
+<i class="ph ph-table"></i> Bulk add blinds
+            </button>
+<button class="secondary-btn" onclick="openReqTransferPhaseFromProject()">
+<i class="ph ph-arrows-left-right"></i> Request transfer phase
+            </button>
+<button class="secondary-btn" onclick="openReqAddHelperFromProject()">
+<i class="ph ph-user-plus"></i> Request add helper
+            </button>
+<button class="secondary-btn" onclick="generateProjectCertificates()">
+<i class="ph ph-file-pdf"></i> Print project certificates
+            </button>
+<button class="secondary-btn" onclick="printProjectTagsFromProjectPage()">
+<i class="ph ph-tag"></i> Print project tags
+            </button>
+<button class="secondary-btn" onclick="duplicateCurrentProject()">
+<i class="ph ph-copy"></i> Duplicate project
+            </button>
+<button class="secondary-btn" onclick="openPage('projectsPage')">
+<i class="ph ph-arrow-left"></i> Back
+            </button>
+</div>
+<h2 class="section-title">Blinds per phase (this project)</h2>
+<div class="phase-grid" id="projectPhaseCards"></div>
+<h2 class="section-title">Blinds list</h2>
+<div class="blind-cards mobile-only" id="projectBlindsCards"></div>
+<table class="main-table desktop-only">
+<thead>
+<tr>
+<th>#</th>
+<th>Blind</th>
+<th>Line</th>
+<th>Type</th>
+<th>Size</th>
+<th>Rate</th>
+<th>Phase</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody id="projectBlindsTableBody"></tbody>
+</table>
+</div> <!-- /projectSubTabBlinds -->
+<div class="hidden" id="projectSubTabSettings">
+<div class="section-card">
+<div class="section-title-row" style="display:flex; align-items:center; justify-content:flex-start; gap:10px; flex-wrap:nowrap;">
+<h2 class="section-title" style="margin:0;">Project Settings</h2>
+<button class="icon-btn" onclick="openModal('psInfoModal')" title="Instructions">
+<i class="ph ph-info"></i>
+</button>
+</div>
+<div class="ps-mode">
+<div class="ps-mode-title" style="display:none">Access Mode</div>
+<div class="tiny muted" style="margin-top:6px; line-height:1.7">
+                  Mode يحدد سياسة التحكم داخل المشروع. تعيين الأشخاص يتم حسب الفيزات (Phase Ownership).
+                </div>
+</div>
+<div class="hr"></div>
+<div class="ps-summary-head">
+<div>
+<div class="ps-mode-title">Phase Ownership (Summary) <span class="sbts-tooltip" data-tip="Quick view of who can update each phase inside this project.
+عرض سريع لمن المخوّل لتحديث كل فيزة داخل هذا المشروع."><span class="sbts-i">i</span><span class="sbts-tip">Quick view of who can update each phase inside this project.
+عرض سريع لمن المخوّل لتحديث كل فيزة داخل هذا المشروع.</span></span></div></div>
+</div>
+<div class="ps-actions" id="psActionsRow" style="display:none;">
+<button class="btn" onclick="openPhaseActivationTab()" type="button">Manage phases</button>
+<button class="btn" onclick="openPhaseOwnersTab()" type="button">Manage phase owners</button>
+<button class="secondary-btn" onclick="exportCurrentProjectPhaseOwners()" type="button">Export</button>
+<button class="btn-danger" onclick="resetProjectPhaseOwnersToDefault()" type="button">Reset</button>
+</div>
+<div class="ps-actions" id="psRequestsRow" style="display:none; gap:10px; flex-wrap:wrap;">
+<button class="secondary-btn" onclick="openPSRequestModal('owner')" type="button">Request owner change</button>
+<button class="secondary-btn" onclick="openPSRequestModal('assist')" type="button">Request assistance</button>
+</div>
+<div class="ps-phase-summary" id="psPhaseSummary"></div>
+</div>
+</div>
+</section>
+<!-- BLIND DETAILS -->
+<section class="page hidden" id="blindDetailsPage">
+<div class="page-title" id="blindDetailsTitle">Blind</div>
+<div class="blind-details-grid">
+<div class="blind-panel">
+<div class="blind-info-box">
+<div><b>Area:</b> <span id="blindDetailArea">-</span></div>
+<div><b>Project:</b> <span id="blindDetailProject">-</span></div>
+<div><b>Line:</b> <span id="blindDetailLine">-</span></div>
+<div><b>Type:</b> <span id="blindDetailType">-</span></div>
+<div><b>Size:</b> <span id="blindDetailSize">-</span></div>
+<div><b>Rate:</b> <span id="blindDetailRate">-</span></div>
+<div class="qr-box">
+<div class="qr-title"><b>QR Tag:</b></div>
+<div class="qr-row">
+<img alt="QR" class="qr-img" id="blindQrImg"/>
+<div class="qr-meta">
+<div class="qr-link-label">Public link (Visitor view)</div>
+<div class="qr-link" id="blindQrLink">-</div>
+<div class="qr-actions">
+<button class="btn-secondary" onclick="copyBlindQrLink()">Copy link</button>
+<button class="btn-primary" onclick="openBlindPublicView()">Open visitor view</button>
+</div>
+<div class="qr-note">Visitor view is read-only. Use Login for approvals and phase updates.</div>
+</div>
+</div>
+</div>
+<div><b>Current phase:</b> <span class="phase-badge" id="blindPhaseBadge">-</span></div>
+</div>
+<h2 class="section-title">Workflow</h2>
+<div class="workflow-steps" id="workflowSteps"></div>
+<div class="page-actions" style="margin-top:10px;">
+<button class="btn-neutral" onclick="quickNextPhase()">
+<i class="ph ph-arrow-right"></i> Next phase
+                </button>
+<button class="secondary-btn" onclick="openChangePhaseModal()">
+<i class="ph ph-arrows-clockwise"></i> Change phase (manual)
+                </button>
+<button class="secondary-btn" onclick="openApprovalsModal()">
+<i class="ph ph-check-circle"></i> Final approvals
+                </button>
+<button class="secondary-btn" onclick="openCertificatePage()">
+<i class="ph ph-file-text"></i> Certificate
+                </button>
+<button class="btn-neutral" onclick="printBlindTagFromDetails()">
+<i class="ph ph-printer"></i> Print Tag
+                </button>
+<button class="secondary-btn" onclick="openProjectDetails(state.currentProjectId)">
+<i class="ph ph-arrow-left"></i> Back
+                </button>
+</div>
+<div class="tiny" id="approvalSummaryText" style="margin-top:8px;color:#6b7280;"></div>
+</div>
+<div class="blind-panel">
+<h2 class="section-title">History log</h2>
+<table class="main-table">
+<thead>
+<tr>
+<th>Date</th>
+<th>From</th>
+<th>To</th>
+<th>By</th>
+</tr>
+</thead>
+<tbody id="blindHistoryTableBody"></tbody>
+</table>
+</div>
+</div>
+</section>
+<!-- SLIP BLIND -->
+<section class="page hidden" id="slipBlindPage">
+<div class="page-title">Slip Blind</div>
+<div class="kpi-grid" id="slipDashboardStats" style="margin:10px 0 16px;"></div>
+<div class="slip-breadcrumb" id="slipBreadcrumb"></div>
+<div class="slip-grid" id="slipAreaCards"></div>
+<div class="slip-grid hidden" id="slipProjectCards"></div>
+<div class="slip-table-box hidden" id="slipBlindsBox">
+<div class="slip-print-toolbar" id="slipPrintToolbar">
+<div class="slip-print-left">
+<button class="secondary-btn" onclick="slipClearTagSelection()"><i class="ph ph-x"></i> Clear selection</button>
+</div>
+<div class="slip-print-right tiny">Selected: <span id="slipSelectedCount">0</span></div>
+</div>
+<table class="main-table">
+<thead>
+<tr>
+<th style="width:42px;"><input id="slipSelectAll" onchange="slipToggleSelectAll(this.checked)" type="checkbox"/></th>
+<th>#</th>
+<th>Blind</th>
+<th>Line</th>
+<th>Size</th>
+<th>Rate</th>
+<th>Phase</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody id="slipBlindsTableBody"></tbody>
+</table>
+</div>
+</section>
+<!-- REPORTS -->
+<section class="page hidden" id="reportsPage">
+<div class="page-title">Reports</div>
+<div class="page-actions">
+<select class="auth-input" id="reportAreaSelect" onchange="onReportAreaChange()"></select>
+<select class="auth-input" id="reportProjectSelect" onchange="renderReports()"></select>
+<button class="btn-neutral" onclick="printReportsA4()">
+<i class="ph ph-printer"></i> Print (A4)
+            </button>
+<button class="btn-neutral" onclick="exportReportsPDF()">
+<i class="ph ph-file-pdf"></i> Export PDF
+            </button>
+<button class="btn-neutral" onclick="shareReports()">
+<i class="ph ph-share-network"></i> Share
+            </button>
+<button class="secondary-btn" onclick="printSelectedProjectCertificates()">
+<i class="ph ph-certificate"></i> Certificates (filtered)
+            </button>
+</div>
+<div class="report-container">
+<div class="report-kpis" id="reportsKpis"></div>
+<h2 class="section-title" style="margin-top:0;">All phases (progress)</h2>
+<div class="phase-progress-list" id="phaseProgressBars"></div>
+<!-- keep canvas (optional) -->
+<canvas class="hidden" height="260" id="reportsChart" width="820"></canvas>
+<h2 class="section-title">Summary</h2>
+<div class="project-summary" id="reportsSummary"></div>
+<div class="reports-split">
+<div class="reports-panel">
+<div class="reports-panel-title">Management Summary</div>
+<div class="reports-panel-body" id="reportsMgmt"></div>
+</div>
+<div class="reports-panel">
+<div class="reports-panel-title">Operational Report</div>
+<div class="reports-panel-body" id="reportsOps"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- USERS -->
+<section class="page hidden" id="permissionsPage">
+<div class="page-title">Users</div>
+<div class="page-actions">
+<button class="btn-neutral" onclick="openReqNewUserAccess()">
+<i class="ph ph-user-plus"></i> Request new user access
+            </button>
+</div>
+<table class="main-table">
+<thead>
+<tr>
+<th>#</th>
+<th>Name</th>
+<th>Username</th>
+<th>Role</th>
+<th>Status</th>
+<th>Projects</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody id="usersTableBody"></tbody>
+</table>
+</section>
+<section class="page hidden" id="notificationsPage">
+<div class="page-header">
+<div>
+<div class="page-title" style="margin:0 0 6px 0;">Inbox</div>
+<div class="tiny">Notifications that matter: actions, system updates, admin notes, and alerts — with full context and quick actions.</div>
+</div>
+<div class="page-actions" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+<input class="input" id="notifInboxSearch" oninput="renderNotificationsInbox()" placeholder="Search notifications..." style="min-width:240px;" type="text"/>
+<button class="btn-neutral btn-small" id="demoSeedBtn" data-admin-only="1" onclick="seedDemoInbox()"><i class="ph ph-sparkle"></i> Demo</button>
+<div class="demo-user-switch" id="demoUserSwitch" data-admin-only="1" style="display:none;">
+  <span class="demo-user-label">Acting as</span>
+  <select id="demoUserSelect" class="input input-small" onchange="sbtsDemoSwitchUser(this.value)"></select>
+  <button class="btn-neutral btn-small" onclick="sbtsDemoTogglePinUser()" id="demoPinUserBtn" title="Pin demo user for this browser">📌</button>
+</div>
+<button class="btn-secondary btn-small" onclick="openCreateRequestModal()"><i class="ph ph-plus"></i> New request</button>
+<button class="btn-secondary btn-small" onclick="markAllNotificationsRead()">Mark all read</button>
+<button class="btn-secondary btn-small" onclick="archiveSelectedNotifications()">Archive</button>
+<button class="btn-danger btn-small" onclick="deleteSelectedNotifications()">Delete</button>
+</div>
+</div>
+<div class="inbox-layout filters-collapsed" id="inboxLayout">
+<aside class="inbox-filters card collapsed" id="inboxFiltersPanel">
+<div class="inbox-filters-title">Filters</div>
+<div class="inbox-filters-title-row" style="margin-top:8px;">
+<div class="inbox-filters-title" style="margin:0;">Views</div>
+<button class="views-pin-btn" id="viewsPinBtn" onclick="toggleInboxViewsPinned(event)" title="Pin Views (keep expanded)">
+<span class="pin-ico">📌</span>
+</button>
+</div>
+<div class="saved-views" id="notifSavedViews"></div>
+<div class="filter-list" id="notifFilters"></div>
+<div class="divider" style="margin:12px 0;"></div>
+<div class="tiny">
+        Tip: <b>Action Required</b> stays visible until you take action. Use Archive to keep a clean Inbox.
+      </div>
+</aside>
+<!-- NOTE: do not nest <main> inside the app <main class="main-content"> (invalid HTML & breaks layout) -->
+<div class="inbox-list card"><div id="inboxListView">
+<div class="inbox-list-toolbar">
+<label class="chk">
+<input id="notifSelectAll" onchange="toggleSelectAllNotifications(this.checked)" type="checkbox"/>
+<span>Select</span>
+</label>
+<div class="tiny" id="notifListHint">0 selected</div>
+<div class="spacer"></div>
+<div class="inbox-toolbar-filters" id="notifToolbarFilters" title="Filters">
+<label class="tiny" style="display:flex;align-items:center;gap:6px; margin-right:6px;">
+<input id="notifUnreadOnly" onchange="setNotifInboxUnreadOnly(this.checked)" type="checkbox"/>
+            Unread
+          </label>
+<select class="input" id="notifProjectFilter" onchange="setNotifInboxProjectFilter(this.value)" style="max-width:190px;"></select>
+<select class="input" id="notifTypeFilter" onchange="setNotifInboxTypeFilter(this.value)" style="max-width:170px;">
+<option value="all">All types</option>
+<option value="action">Action</option>
+<option value="system">System</option>
+<option value="warning">Warning</option>
+<option value="admin">Admin</option>
+</select>
+<select class="input" id="notifSort" onchange="renderNotificationsInbox()" style="max-width:170px;">
+<option value="newest">Newest</option>
+<option value="oldest">Oldest</option>
+</select>
+</div>
+</div>
+<div class="notif-list modern" id="notificationsInboxList"></div>
+</div><div class="inbox-reader hidden" id="inboxReaderView">
+<div class="inbox-reader-toolbar" id="inboxReaderToolbar"></div>
+<div class="inbox-reader-body" id="inboxReaderBody"></div>
+</div></div>
+
+
+</div>
+</section>
+<!-- CERTIFICATE SETTINGS (Standalone page) -->
+<section class="page hidden" id="certificateSettingsPage">
+<div class="page-title">Certificate Settings</div>
+<div class="settings-section">
+<label>Template</label>
+<select class="auth-input" id="certTemplateSelect" onchange="setCertTemplate(this.value)"></select>
+<div class="tiny">You can add more templates later. (Stored locally)</div>
+</div>
+<div class="settings-section">
+<label>Certificate title (center)</label>
+<input class="auth-input" id="certTitleInput" oninput="updateCertConfig('title', this.value)" placeholder="e.g. Smart Blind Tag System Certificate" type="text"/>
+</div>
+<div class="settings-section">
+<label>Header background color</label>
+<input id="certHeaderBg" onchange="updateCertConfig('headerBg', this.value)" type="color" value="#ffffff"/>
+</div>
+<div class="settings-section">
+<label>Status text style</label>
+<select class="auth-input" id="certStatusStyle" onchange="updateCertConfig('statusStyle', this.value)">
+<option value="pill">Pill</option>
+<option value="big">Big centered</option>
+</select>
+</div>
+<div class="settings-section">
+<label>Show workflow table</label>
+<input id="certShowWorkflow" onchange="updateCertConfig('showWorkflow', this.checked)" type="checkbox"/>
+</div>
+<div class="settings-section">
+<label>Show approvals table</label>
+<input id="certShowApprovals" onchange="updateCertConfig('showApprovals', this.checked)" type="checkbox"/>
+</div>
+<div class="settings-section">
+<label>Footer text</label>
+<input class="auth-input" id="certFooterText" oninput="updateCertConfig('footerText', this.value)" placeholder="e.g. Generated from SBTS logs" type="text"/>
+</div>
+<div class="settings-section">
+<div class="page-actions" style="margin-bottom:0;">
+<button class="btn-neutral" onclick="previewCertificateTemplate()">
+<i class="ph ph-eye"></i> Preview certificate
+              </button>
+<button class="secondary-btn" onclick="openPage('settingsPage')">
+<i class="ph ph-arrow-left"></i> Back to Settings
+              </button>
+</div>
+<!-- Inbox quick-view modal (Gmail-style) -->
+<div class="notif-modal hidden" id="notifQuickModal" onclick="closeNotifQuickModal(event)">
+<div class="notif-modal-card" onclick="event.stopPropagation();">
+<div class="notif-modal-head">
+<div class="tiny muted">Notification</div>
+<div class="spacer"></div>
+<button class="btn-neutral btn-small" onclick="closeNotifQuickModal()"><i class="ph ph-x"></i> Close</button>
+</div>
+<div class="notif-modal-body" id="notifQuickModalBody"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- TAG DESIGNER (Template editor) -->
+<section class="page hidden" id="tagDesignerPage">
+<div class="page-title">Tag Designer</div>
+<div class="tiny" style="margin-bottom:10px;">Design your printed tag (7cm × 11cm). Drag elements to reposition. Click an element to edit its font/size. Use the corner handle to resize Logo / QR frame / Hole. Date will print as <b>MM/YYYY</b> in the bottom-left corner.</div>
+<div class="sbts-tag-designer">
+<div class="tag-designer-stage-wrap">
+<div class="tag-designer-toolbar">
+<button class="btn-neutral" onclick="tdResetTemplate()"><i class="ph ph-arrow-counter-clockwise"></i> Reset default</button>
+<button class="btn-neutral" onclick="tdSaveTemplate()"><i class="ph ph-floppy-disk"></i> Save template</button>
+<button class="btn-neutral" onclick="tdTestPrint()"><i class="ph ph-printer"></i> Test print</button>
+</div>
+<div aria-label="Tag canvas" class="tag-designer-stage" id="tagDesignerStage"></div>
+<div class="tiny" style="margin-top:8px;">Tip: keep QR inside the white frame for reliable scanning.</div>
+</div>
+<div class="tag-designer-panel">
+<div class="settings-section" style="margin-top:0;">
+<label>Templates</label>
+<div class="td-template-list" id="tdTemplateList"></div>
+<div class="tiny" style="margin-top:6px;">You have 3 editable templates + 1 locked default. Any change saves automatically to the selected template.</div>
+</div>
+<div class="settings-section">
+<label>Global tag color (one color for all tags)</label>
+<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+<input id="tdBgColor" oninput="tdUpdateBgColor(this.value)" type="color" value="#0F6D8C"/>
+<span class="tiny" id="tdBgColorHex">#0F6D8C</span>
+<button class="btn-neutral" onclick="tdSaveThemeColor()"><i class="ph ph-floppy-disk"></i> Save</button>
+</div>
+<div class="tiny" style="margin-top:6px;">Printed date will appear in the bottom-left corner as <b>MM/YYYY</b>. Rounded corners enabled for safe handling.</div>
+</div>
+<div class="settings-section">
+<label>Company logo (used on tags)</label>
+<input accept="image/*" class="auth-input" onchange="updateCompanyLogo(event)" type="file"/>
+<div class="tiny" style="margin-top:6px;">Tip: use a square PNG with transparent background.</div>
+</div>
+<div class="settings-section">
+<label>Tag size (mm)</label>
+<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+<input class="auth-input" id="tdTagWmm" max="120" min="40" placeholder="70" step="1" style="max-width:120px;" type="number"/>
+<span class="tiny">×</span>
+<input class="auth-input" id="tdTagHmm" max="160" min="40" placeholder="110" step="1" style="max-width:120px;" type="number"/>
+<span class="tiny">(W × H)</span>
+<button class="btn-neutral" onclick="tdApplyTagSizeMm()"><i class="ph ph-check"></i> Apply</button>
+</div>
+<div class="tiny" style="margin-top:6px;">Standard is 70mm × 110mm (7cm × 11cm). You can change it if needed — printing will follow the template size.</div>
+</div>
+<!-- moved to bottom -->
+<div class="settings-section">
+<label>Rows (labels &amp; styles)</label>
+<div class="tiny" style="margin-bottom:8px;">Edit labels (Area / Line / ID), font size, weight and alignment for each row. Each row can be different.</div>
+<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">
+<div style="flex:1;min-width:180px;">
+<div class="tiny" style="margin-bottom:6px;">Font family</div>
+<select class="auth-input" id="tdFontFamily" onchange="tdSetFontFamily(this.value)">
+<option value="Arial">Arial</option>
+<option value="Tahoma">Tahoma</option>
+<option value="Verdana">Verdana</option>
+<option value="Inter">Inter</option>
+<option value="Roboto">Roboto</option>
+</select>
+</div>
+<div style="flex:1;min-width:180px;">
+<div class="tiny" style="margin-bottom:6px;">Title font size</div>
+<input class="auth-input" id="tdTitleSize" max="60" min="12" oninput="tdSetFontSize('title', this.value)" step="1" type="number" value="32"/>
+</div>
+</div>
+<div class="td-row-grid2">
+<div class="td-row-head">Row</div>
+<div class="td-row-head">Label</div>
+<div class="td-row-head">Size</div>
+<div class="td-row-head">Label weight</div>
+<div class="td-row-head">Value weight</div>
+<div class="td-row-head">Align</div>
+<div class="td-row-name">Area</div>
+<input class="auth-input" id="tdLblArea" oninput="tdSetRowLabel('areaLine', this.value)" value="Area"/>
+<input class="auth-input td-num" id="tdAreaSize" max="48" min="10" oninput="tdSetFontSize('area', this.value)" step="1" type="number" value="22"/>
+<div class="td-seg">
+<button class="seg-btn" onclick="tdUiSetWeight('areaLine','key',400)" type="button">R</button>
+<button class="seg-btn" onclick="tdUiSetWeight('areaLine','key',700)" type="button">B</button>
+<button class="seg-btn" onclick="tdUiSetWeight('areaLine','key',900)" type="button">XB</button>
+<select class="auth-input td-hidden" id="tdLblAreaW" onchange="tdSetRowWeights('areaLine', this.value, document.getElementById('tdValAreaW').value)">
+<option value="400">R</option><option value="700">B</option><option value="900">XB</option>
+</select>
+</div>
+<div class="td-seg">
+<button class="seg-btn" onclick="tdUiSetWeight('areaLine','val',400)" type="button">R</button>
+<button class="seg-btn" onclick="tdUiSetWeight('areaLine','val',700)" type="button">B</button>
+<button class="seg-btn" onclick="tdUiSetWeight('areaLine','val',900)" type="button">XB</button>
+<select class="auth-input td-hidden" id="tdValAreaW" onchange="tdSetRowWeights('areaLine', document.getElementById('tdLblAreaW').value, this.value)">
+<option value="400">R</option><option value="700">B</option><option value="900">XB</option>
+</select>
+</div>
+<div class="td-align">
+<button class="seg-btn" onclick="tdUiSetAlign('areaLine','left')" type="button">L</button>
+<button class="seg-btn" onclick="tdUiSetAlign('areaLine','center')" type="button">C</button>
+<button class="seg-btn" onclick="tdUiSetAlign('areaLine','right')" type="button">R</button>
+<select class="auth-input td-hidden" id="tdAreaAlign" onchange="tdSetRowAlign('areaLine', this.value)">
+<option value="left">Left</option><option value="center">Center</option><option value="right">Right</option>
+</select>
+</div>
+<div class="td-row-name">Line</div>
+<input class="auth-input" id="tdLblLine" oninput="tdSetRowLabel('equLine', this.value)" value="Line"/>
+<input class="auth-input td-num" id="tdEquSize" max="48" min="10" oninput="tdSetFontSize('equ', this.value)" step="1" type="number" value="22"/>
+<div class="td-seg">
+<button class="seg-btn" onclick="tdUiSetWeight('equLine','key',400)" type="button">R</button>
+<button class="seg-btn" onclick="tdUiSetWeight('equLine','key',700)" type="button">B</button>
+<button class="seg-btn" onclick="tdUiSetWeight('equLine','key',900)" type="button">XB</button>
+<select class="auth-input td-hidden" id="tdLblLineW" onchange="tdSetRowWeights('equLine', this.value, document.getElementById('tdValLineW').value)">
+<option value="400">R</option><option value="700">B</option><option value="900">XB</option>
+</select>
+</div>
+<div class="td-seg">
+<button class="seg-btn" onclick="tdUiSetWeight('equLine','val',400)" type="button">R</button>
+<button class="seg-btn" onclick="tdUiSetWeight('equLine','val',700)" type="button">B</button>
+<button class="seg-btn" onclick="tdUiSetWeight('equLine','val',900)" type="button">XB</button>
+<select class="auth-input td-hidden" id="tdValLineW" onchange="tdSetRowWeights('equLine', document.getElementById('tdLblLineW').value, this.value)">
+<option value="400">R</option><option value="700">B</option><option value="900">XB</option>
+</select>
+</div>
+<div class="td-align">
+<button class="seg-btn" onclick="tdUiSetAlign('equLine','left')" type="button">L</button>
+<button class="seg-btn" onclick="tdUiSetAlign('equLine','center')" type="button">C</button>
+<button class="seg-btn" onclick="tdUiSetAlign('equLine','right')" type="button">R</button>
+<select class="auth-input td-hidden" id="tdLineAlign" onchange="tdSetRowAlign('equLine', this.value)">
+<option value="left">Left</option><option value="center">Center</option><option value="right">Right</option>
+</select>
+</div>
+<div class="td-row-name">ID</div>
+<input class="auth-input" id="tdLblId" oninput="tdSetRowLabel('idLine', this.value)" value="ID"/>
+<input class="auth-input td-num" id="tdIdSize" max="48" min="10" oninput="tdSetFontSize('id', this.value)" step="1" type="number" value="22"/>
+<div class="td-seg">
+<button class="seg-btn" onclick="tdUiSetWeight('idLine','key',400)" type="button">R</button>
+<button class="seg-btn" onclick="tdUiSetWeight('idLine','key',700)" type="button">B</button>
+<button class="seg-btn" onclick="tdUiSetWeight('idLine','key',900)" type="button">XB</button>
+<select class="auth-input td-hidden" id="tdLblIdW" onchange="tdSetRowWeights('idLine', this.value, document.getElementById('tdValIdW').value)">
+<option value="400">R</option><option value="700">B</option><option value="900">XB</option>
+</select>
+</div>
+<div class="td-seg">
+<button class="seg-btn" onclick="tdUiSetWeight('idLine','val',400)" type="button">R</button>
+<button class="seg-btn" onclick="tdUiSetWeight('idLine','val',700)" type="button">B</button>
+<button class="seg-btn" onclick="tdUiSetWeight('idLine','val',900)" type="button">XB</button>
+<select class="auth-input td-hidden" id="tdValIdW" onchange="tdSetRowWeights('idLine', document.getElementById('tdLblIdW').value, this.value)">
+<option value="400">R</option><option value="700">B</option><option value="900">XB</option>
+</select>
+</div>
+<div class="td-align">
+<button class="seg-btn" onclick="tdUiSetAlign('idLine','left')" type="button">L</button>
+<button class="seg-btn" onclick="tdUiSetAlign('idLine','center')" type="button">C</button>
+<button class="seg-btn" onclick="tdUiSetAlign('idLine','right')" type="button">R</button>
+<select class="auth-input td-hidden" id="tdIdAlign" onchange="tdSetRowAlign('idLine', this.value)">
+<option value="left">Left</option><option value="center">Center</option><option value="right">Right</option>
+</select>
+</div>
+</div>
+<div class="tiny" style="margin-top:8px;">Tip: You can set different alignment and weights per row (Area / Line / ID).</div>
+</div>
+<div class="settings-section">
+<label>Date font size</label>
+<input id="tdDateSize" max="18" min="8" oninput="tdSetFontSize('date', this.value)" type="range" value="10"/>
+<div class="tiny">Current: <span id="tdDateSizeVal">10</span>px</div>
+</div>
+<div class="settings-section">
+<label>Snap grid (mm)</label>
+<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+<input checked="" id="tdSnap" onchange="tdToggleSnap(this.checked)" type="checkbox"/>
+<select class="auth-input" id="tdGridMm" onchange="tdSetGridMm(this.value)" style="max-width:140px;">
+<option selected="" value="1">1 mm</option>
+<option value="2">2 mm</option>
+<option value="5">5 mm</option>
+</select>
+<span class="tiny">Snap + grid for easy alignment</span>
+</div>
+</div>
+<div class="settings-section">
+<label>Notes</label>
+<div class="tiny">• Hole is movable (for hanging).<br/>• Logo/date positions can be changed.<br/>• Template is saved locally on this device for now.</div>
+<div class="settings-section">
+<details open="">
+<summary style="cursor:pointer;font-weight:800;">Theme / template change log</summary>
+<div class="tiny" style="margin:6px 0 8px;">Shows recent changes to color and templates on this device.</div>
+<div id="tdTagAuditTable"></div>
+</details>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- SETTINGS -->
+<section class="page hidden" id="settingsPage">
+<div class="page-title">Settings</div>
+<div class="settings-section">
+<label>Themes</label>
+<div class="theme-grid">
+<button class="theme-chip" onclick="applyThemePreset('classic')">Classic Blue</button>
+<button class="theme-chip" onclick="applyThemePreset('midnight')">Midnight</button>
+<button class="theme-chip" onclick="applyThemePreset('slate')">Slate</button>
+<button class="theme-chip" onclick="applyThemePreset('emerald')">Emerald</button>
+</div>
+<div class="tiny">Phase colors are fixed and will not change.</div>
+</div>
+<div class="settings-section">
+<label>Custom sidebar color</label>
+<input id="themePicker" onchange="updateThemeColor()" type="color" value="#174c7e"/>
+<div class="tiny">This changes sidebar + header only (Custom mode).</div>
+</div>
+<div class="settings-section" id="brandingSection">
+<label>Branding (Header)</label>
+<div class="tiny" style="margin-bottom:6px;">Program (left)</div>
+<input class="auth-input" id="brandingProgramTitle" oninput="updateBranding('programTitle', this.value)" placeholder="Program name (optional)" type="text"/>
+<input class="auth-input" id="brandingProgramSub" oninput="updateBranding('programSubtitle', this.value)" placeholder="Program subtitle (optional)" type="text"/>
+<div class="tiny" style="margin-top:6px;">Site (center)</div>
+<input class="auth-input" id="brandingSiteTitle" oninput="updateBranding('siteTitle', this.value)" placeholder="Shedgum Gas Plant" type="text"/>
+<input class="auth-input" id="brandingSiteSub" oninput="updateBranding('siteSubtitle', this.value)" placeholder="Smart Blind Tag System" type="text"/>
+<div class="tiny" style="margin-top:6px;">Company (right)</div>
+<input class="auth-input" id="brandingCompanyName" oninput="updateBranding('companyName', this.value)" placeholder="Company name (optional)" type="text"/>
+<input class="auth-input" id="brandingCompanySub" oninput="updateBranding('companySub', this.value)" placeholder="Company subtitle (optional)" type="text"/>
+<div class="tiny" style="margin-top:6px;">Company logo (right)</div>
+<input accept="image/*" onchange="updateCompanyLogo(event)" type="file"/>
+</div>
+<div class="settings-section" id="profileImageSection">
+<label>Profile image</label>
+<input accept="image/*" onchange="updateProfileImage(event)" type="file"/>
+<div class="tiny">Used in local UI only.</div>
+</div>
+<div class="settings-section" id="fontSizeSection">
+<label>Font size</label>
+<input id="fontSizeSlider" max="18" min="12" oninput="updateFontSize(this.value)" type="range" value="14"/>
+<div class="tiny">Current: <span id="fontSizeValue">14</span>px</div>
+</div>
+<div class="settings-section" id="workflowLiteSection">
+<div class="row" style="align-items:center; justify-content:space-between; gap:10px;">
+<label style="margin:0;">Workflow behavior (Admin)</label>
+<button class="icon-btn" onclick="toast('When enabled: non-admin users can only move to the next phase (no skipping).');" title="Instructions"><i class="ph ph-info"></i></button>
+</div>
+<div class="row" style="align-items:center; gap:10px; margin-top:8px;">
+<label class="switch">
+<input id="toggleEnforcePhaseOrder" onchange="toggleEnforcePhaseOrder(this.checked)" type="checkbox"/>
+<span class="slider"></span>
+</label>
+<div>
+<div style="font-weight:700;">Enforce phase order</div>
+<div class="tiny">If ON: users can only move to the next phase (recommended).</div>
+</div>
+</div>
+</div>
+<div class="settings-section">
+<label>Job title (extra)</label>
+<input class="auth-input" id="jobTitleInput" oninput="updateJobTitle(this.value)" placeholder="e.g. Safety Officer" type="text"/>
+<div class="tiny">Saved for current user locally.</div>
+</div>
+<div class="settings-section" id="reportsCardsShortcutSection">
+<label>Reports cards (Admin)</label>
+<div class="tiny">Moved to a dedicated page to keep Settings clean.</div>
+<div class="page-actions" style="margin-bottom:0;">
+<button class="btn-neutral" onclick="openPage('reportsCardsPage')"><i class="ph ph-layout"></i> Open Reports Cards</button>
+</div>
+</div>
+<div class="settings-section" id="certificateShortcutSection">
+<label>Certificate settings (shortcut)</label>
+<div class="tiny">Open the full certificate settings page from sidebar or here.</div>
+<div class="page-actions" style="margin-bottom:0;">
+<button class="btn-neutral" onclick="openPage('certificateSettingsPage')">
+<i class="ph ph-certificate"></i> Open Certificate Settings
+              </button>
+</div>
+</div>
+<div class="settings-section" id="trainingVisibilitySection">
+<div class="row" style="align-items:center; justify-content:space-between; gap:10px;">
+<label style="margin:0;">Training page (Admin)</label>
+<button class="icon-btn" onclick="openModal('trainingInfoModal')" title="Instructions">
+<i class="ph ph-info"></i>
+</button>
+</div>
+<div class="row" style="align-items:center; gap:10px; margin-top:8px;">
+<label class="switch">
+<input id="toggleTrainingPage" type="checkbox"/>
+<span class="slider"></span>
+</label>
+<div>
+<div style="font-weight:700;">Show Training in sidebar</div>
+<div class="tiny">Admin can hide/show the Training page for all users.</div>
+</div>
+</div>
+</div>
+<!-- Backup & Restore (Admin only) -->
+<div class="settings-section" id="backupRestoreSection" style="display:none;">
+<div class="row" style="align-items:center; justify-content:space-between; gap:10px;">
+<label style="margin:0;">Backup &amp; Restore (Admin)</label>
+<button class="icon-btn" onclick="openModal('backupInfoModal')" title="Instructions">
+<i class="ph ph-info"></i>
+</button>
+</div>
+<div class="row" style="align-items:center; gap:10px; margin-top:10px; flex-wrap:wrap;">
+<button class="secondary-btn" onclick="sbtsCreateBackupNow()"><i class="ph ph-download"></i> Create backup now</button>
+<button class="btn-neutral" onclick="sbtsSaveBackupLocalNow()"><i class="ph ph-floppy-disk"></i> Save locally</button>
+<label class="secondary-btn" style="cursor:pointer; display:inline-flex; align-items:center; gap:8px;">
+<i class="ph ph-arrow-u-up-left"></i> Restore backup
+                <input accept="application/json" id="sbtsRestoreBackupInput" onchange="sbtsRestoreBackupFromFile(event)" style="display:none;" type="file"/>
+</label>
+</div>
+<div class="row" style="align-items:center; gap:10px; margin-top:12px;">
+<label class="switch">
+<input id="toggleWeeklyBackup" onchange="sbtsToggleWeeklyBackup(this.checked)" type="checkbox">
+<span class="slider"></span>
+</input></label>
+<div>
+<div style="font-weight:700;">Weekly local backup</div>
+<div class="tiny">If ON: SBTS saves the last 10 weekly backups locally (browser only).</div>
+</div>
+<button class="btn-neutral" onclick="sbtsOpenLocalBackups()" style="margin-left:auto;"><i class="ph ph-archive"></i> Local backups</button>
+</div>
+<div class="tiny" id="sbtsLocalBackupsBox" style="margin-top:10px;"></div>
+<div class="tiny" style="margin-top:8px; opacity:.8;">Hooks ready for Supabase backups later (disabled in this build).</div>
+</div>
+<div class="settings-section" id="rolesCatalogCard">
+<label>Roles &amp; Specialties Manager</label>
+<div class="tiny">Add / rename / hide roles and specialties. Hidden items stay in history.</div>
+<div class="rm-body">
+<!-- Controls -->
+<div class="rm-toolbar"><div class="rm-controls">
+<div class="rm-search">
+<input class="input" id="roleCatalogSearch" placeholder="Search roles/specialties… (e.g., QC, Inspection)"/>
+</div>
+<div class="rm-select">
+<select class="input" id="roleCatalogFilter">
+<option value="all">All</option>
+<option value="active">Active</option>
+<option value="hidden">Hidden</option>
+</select>
+</div>
+<div class="rm-select">
+<select class="input" id="roleCatalogSort">
+<option value="type">Sort: Type</option>
+<option value="az">Sort: A → Z</option>
+<option value="za">Sort: Z → A</option>
+</select>
+</div>
+<div class="rm-actions">
+<button class="secondary-btn" id="btnToggleRoleAdd">+ Add new</button>
+</div>
+</div></div>
+<!-- Add form -->
+<div class="rm-add soft-card" id="roleAddForm" style="display:none;">
+<div class="rm-add-grid">
+<div>
+<label class="tiny muted">Name</label>
+<input class="input" id="roleAddLabel" placeholder="e.g., Inspection, QC, PT, X-ray"/>
+</div>
+<div>
+<label class="tiny muted">Type</label>
+<select class="input" id="roleAddType">
+<option value="role">Role</option>
+<option value="specialty">Specialty</option>
+</select>
+</div>
+</div>
+<div class="rm-add-footer">
+<button class="primary-btn" id="btnAddRole">Add</button>
+<div class="tiny muted">Tip: Renaming changes the label only; IDs stay stable to protect history.</div>
+</div>
+</div>
+<!-- Table -->
+<div class="table-wrap rm-table">
+<table class="table">
+<thead>
+<tr>
+<th style="width:56px;">#</th>
+<th>Name</th>
+<th style="width:140px;">Type</th>
+<th style="width:140px;">Status</th>
+<th style="width:260px;">Actions</th>
+</tr>
+</thead>
+<tbody id="rolesCatalogTableBody"></tbody>
+</table>
+</div>
+<div class="tiny muted" style="margin-top:10px;">
+                Hidden items stay in history (recommended). “Delete” performs a safe soft-delete.
+              </div>
+</div>
+</div>
+<div class="settings-section" id="finalApprovalsManagerSection">
+<label>Final Approvals Manager</label>
+<div class="tiny">Manage final approvals centrally (names, scope, status). <b>Safe Mode</b> affects display only.</div>
+<div class="soft-card fam-shell" style="margin-top:10px;">
+<div class="fam-toolbar">
+<div class="fam-controls">
+<input class="input" id="famSearch" placeholder="Search approvals… (e.g., Foreman, QC)"/>
+<select class="input" id="famFilterStatus">
+<option value="all">All</option>
+<option value="active">Active</option>
+<option value="disabled">Disabled</option>
+<option value="archived">Archived</option>
+</select>
+<select class="input" id="famFilterApplies">
+<option value="all">Applies: All</option>
+<option value="slip">Applies: Slip Blind</option>
+<option value="isolation">Applies: Isolation Blind</option>
+</select>
+<div style="flex:1"></div>
+<button class="secondary-btn" id="famResetBtn" title="Restore default approvals (keeps history)">Reset</button>
+<button class="secondary-btn" id="famAddBtn">+ Add approval</button>
+</div>
+</div>
+<div class="table-wrap fam-table" style="margin-top:12px;">
+<table class="table">
+<thead>
+<tr>
+<th style="width:56px;">#</th>
+<th>Name</th>
+<th style="width:120px;">Applies To</th>
+<th style="width:220px;">Who can approve</th>
+<th style="width:110px;">Required</th>
+<th style="width:110px;">Order</th>
+<th style="width:120px;">Status</th>
+<th style="width:300px;">Actions</th>
+</tr>
+</thead>
+<tbody id="famTbody"></tbody>
+</table>
+</div>
+<div class="tiny muted" style="margin-top:10px; line-height:1.7">
+                Tip: Disable (recommended) keeps history safe. Safe Mode only changes displayed labels (no data migration).
+              </div>
+</div>
+</div>
+<div class="settings-section" id="faSafeModeSection">
+<label>Advanced</label>
+<div class="row" style="align-items:center; gap:12px;">
+<label class="check">
+<input id="faSafeModeToggle" type="checkbox"/>
+                Final Approvals Manager (Safe Mode)
+              </label>
+<div class="tiny">Labels only: OFF = use classic phase labels. ON = read labels from Final Approvals Manager. <b>No effect</b> on approvals, permissions, or workflow.</div>
+</div>
+</div>
+<!-- Admin Inspector (Notification/Inbox) -->
+<div class="settings-section" id="notifInspectorSection" style="display:none;">
+<div class="settings-section-header">
+<h3>Notification &amp; Inbox Inspector</h3>
+<p class="muted">Admin-only tools to inspect, reset, and seed notifications/inbox for testing.</p>
+</div>
+<div class="settings-grid">
+<div class="setting-item">
+<div>
+<div class="setting-title">Open Inspector</div>
+<div class="setting-desc">View counts, recent items, and error logs.</div>
+</div>
+<button class="btn btn-secondary" id="btnOpenNotifInspector">Open</button>
+</div>
+<div class="setting-item">
+<div>
+<div class="setting-title">Reset Notification System</div>
+<div class="setting-desc">Clears all local notifications/inbox and rebuilds a clean baseline.</div>
+</div>
+<button class="btn btn-danger" id="btnResetNotifSystem">Reset</button>
+</div>
+<div class="setting-item">
+<div>
+<div class="setting-title">Seed Demo Data</div>
+<div class="setting-desc">Adds a few realistic demo requests/updates for a full-flow test.</div>
+</div>
+<button class="btn" id="btnSeedNotifDemo">Seed</button>
+</div>
+</div>
+<div class="card" id="notifInspectorPanel" style="display:none; margin-top:12px;">
+<div class="card-header">
+<div class="card-title">Inspector</div>
+<div class="card-actions">
+<button class="btn btn-secondary" id="btnCloseNotifInspector">Close</button>
+</div>
+</div>
+<div class="card-body">
+<div class="muted" id="notifInspectorBody">Loading…</div>
+</div>
+</div>
+</div>
+<div class="settings-section" id="notifRulesSection">
+<label>Notification Rules</label>
+<div class="tiny" style="margin-bottom:8px;">Control which notifications become <b>Action Required</b> by default. (Local only)</div>
+<div class="rule-grid">
+<div class="rule-card">
+<div class="rule-title">Defaults by category</div>
+<label class="rule-line"><input id="nr_def_system" type="checkbox"/> System notifications require action</label>
+<label class="rule-line"><input id="nr_def_admin" type="checkbox"/> Admin notes require action</label>
+<label class="rule-line"><input id="nr_def_warning" type="checkbox"/> Warnings require action</label>
+<div class="tiny muted" style="margin-top:6px;">Action category is always treated as Action Required.</div>
+</div>
+<div class="rule-card">
+<div class="rule-title">Special cases (actionKey)</div>
+<label class="rule-line"><input id="nr_key_new_user" type="checkbox"/> New User Request</label>
+<label class="rule-line"><input id="nr_key_cert_final" type="checkbox"/> Certificate / Final Approval</label>
+<label class="rule-line"><input id="nr_key_phase_approval" type="checkbox"/> Phase approval notifications</label>
+<div class="tiny muted" style="margin-top:6px;">These override the defaults above when actionKey is present.</div>
+</div>
+</div>
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;">
+<button class="btn-primary btn-small" onclick="saveNotifRulesFromSettings()"><i class="ph ph-floppy-disk"></i> Save rules</button>
+<button class="btn-neutral btn-small" onclick="resetNotifRulesToDefault()"><i class="ph ph-arrow-counter-clockwise"></i> Reset</button>
+<span class="tiny muted">Applies to new notifications (and legacy ones missing requiresAction).</span>
+</div>
+</div>
+</section>
+<!-- TRAINING -->
+<section class="page hidden" id="trainingPage">
+<div class="page-header">
+<div class="page-title">Training</div>
+<div class="tiny">Quick, structured guide for SBTS. Visitors can view only; login is required to perform actions.</div>
+</div>
+<div class="card">
+<div class="card-title">Training Overview</div>
+<div class="training-overview" style="margin-top:12px;">
+<div class="mini-card">
+<div class="mini-title">Modules</div>
+<div class="mini-body"><b>6</b> learning modules</div>
+</div>
+<div class="mini-card">
+<div class="mini-title">Last update</div>
+<div class="mini-body"><b>Jan 2026</b></div>
+</div>
+<div class="mini-card">
+<div class="mini-title">Goal</div>
+<div class="mini-body">Standardize phases, approvals, certificates &amp; printing</div>
+</div>
+</div>
+</div>
+<div class="card">
+<div class="card-title">Training Modules</div>
+<div class="tiny">Open any module below. Keep it simple in the field.</div>
+<div class="training-modules" style="margin-top:12px;">
+<details class="training-module" open="">
+<summary>
+<span class="tm-title">1) What is SBTS?</span>
+<span class="tm-badges">
+<span class="badge">Intro</span>
+<span class="badge badge-info">2 min</span>
+</span>
+</summary>
+<div class="tm-body">
+<div class="grid-2">
+<div class="mini-card">
+<div class="mini-title">EN</div>
+<div class="mini-body">
+                        • Tracks blind isolation workflow end-to-end<br/>
+                        • Traceability: who did what, and when<br/>
+                        • Certificates &amp; printing after approvals
+                      </div>
+</div>
+<div class="mini-card">
+<div class="mini-title">AR</div>
+<div class="mini-body">
+                        • يتابع مراحل العزل للبلايند من البداية للنهاية<br/>
+                        • توثيق كامل: من نفّذ ومتى<br/>
+                        • إصدار الشهادات والطباعة بعد الاعتماد
+                      </div>
+</div>
+</div>
+</div>
+</details>
+<details class="training-module">
+<summary>
+<span class="tm-title">2) Basic Workflow (Phases)</span>
+<span class="tm-badges">
+<span class="badge">Workflow</span>
+<span class="badge badge-info">4 min</span>
+</span>
+</summary>
+<div class="tm-body">
+<div class="steps">
+<div class="step">
+<div class="step-badge">1</div>
+<div class="step-body">
+<b>Create Blind</b><br/>
+                        Enter blind details, type, size/rate, project &amp; area.
+                      </div>
+</div>
+<div class="step">
+<div class="step-badge">2</div>
+<div class="step-body">
+<b>Move by phases</b><br/>
+                        Installation → Torque → Final Tight → Inspection → Ready.
+                      </div>
+</div>
+<div class="step">
+<div class="step-badge">3</div>
+<div class="step-body">
+<b>Approvals</b><br/>
+                        Authorized approvers sign/approve; history is saved.
+                      </div>
+</div>
+<div class="step">
+<div class="step-badge">4</div>
+<div class="step-body">
+<b>Certificate</b><br/>
+                        Generate and print certificate once required approvals are completed.
+                      </div>
+</div>
+</div>
+</div>
+</details>
+<details class="training-module">
+<summary>
+<span class="tm-title">3) QR (Field Use)</span>
+<span class="tm-badges">
+<span class="badge">QR</span>
+<span class="badge badge-info">2 min</span>
+</span>
+</summary>
+<div class="tm-body">
+<div class="grid-2">
+<div class="mini-card">
+<div class="mini-title">EN</div>
+<div class="mini-body">
+                        • Scan QR to open blind status instantly<br/>
+                        • Visitor view shows read-only information<br/>
+                        • Fast verification in the field
+                      </div>
+</div>
+<div class="mini-card">
+<div class="mini-title">AR</div>
+<div class="mini-body">
+                        • امسح QR لعرض حالة البلايند فورًا<br/>
+                        • وضع الزائر قراءة فقط<br/>
+                        • مناسب للتحقق السريع في الميدان
+                      </div>
+</div>
+</div>
+</div>
+</details>
+<details class="training-module">
+<summary>
+<span class="tm-title">4) Certificates &amp; Printing</span>
+<span class="tm-badges">
+<span class="badge">Certificates</span>
+<span class="badge badge-info">3 min</span>
+</span>
+</summary>
+<div class="tm-body">
+<div class="grid-2">
+<div class="mini-card">
+<div class="mini-title">EN</div>
+<div class="mini-body">
+                        • Print single blind certificate from its details<br/>
+                        • Print project certificates: select what you need then print<br/>
+                        • Use preview to confirm layout before printing
+                      </div>
+</div>
+<div class="mini-card">
+<div class="mini-title">AR</div>
+<div class="mini-body">
+                        • طباعة شهادة بلايند واحد من تفاصيله<br/>
+                        • طباعة شهادات المشروع: اختر الشهادات ثم اطبع<br/>
+                        • استخدم المعاينة للتأكد من التنسيق
+                      </div>
+</div>
+</div>
+</div>
+</details>
+<details class="training-module">
+<summary>
+<span class="tm-title">5) Roles &amp; Permissions</span>
+<span class="tm-badges">
+<span class="badge">Access</span>
+<span class="badge badge-info">3 min</span>
+</span>
+</summary>
+<div class="tm-body">
+<div class="grid-2">
+<div class="mini-card">
+<div class="mini-title">EN</div>
+<div class="mini-body">
+                        • Visitor: view only via QR or shared link<br/>
+                        • Users: update phases if authorized<br/>
+                        • Admin: manage settings, users, and controls
+                      </div>
+</div>
+<div class="mini-card">
+<div class="mini-title">AR</div>
+<div class="mini-body">
+                        • زائر: عرض فقط عبر QR أو رابط<br/>
+                        • مستخدم: تحديث المراحل حسب الصلاحية<br/>
+                        • أدمن: إدارة الإعدادات والمستخدمين والتحكم
+                      </div>
+</div>
+</div>
+</div>
+</details>
+<details class="training-module">
+<summary>
+<span class="tm-title">6) Slip Blind Special Rule</span>
+<span class="tm-badges">
+<span class="badge">Safety</span>
+<span class="badge badge-warn">Important</span>
+</span>
+</summary>
+<div class="tm-body">
+<div class="tiny" style="margin-bottom:10px;">
+                    For demolish cases, Metal Foreman approval is required before certificate.
+                  </div>
+<div class="grid-2">
+<div class="mini-card">
+<div class="mini-title">EN</div>
+<div class="mini-body">
+                        • If type = Slip Blind (Demolish), require Metal Foreman approval<br/>
+                        • Certificate will stay pending until approval is completed
+                      </div>
+</div>
+<div class="mini-card">
+<div class="mini-title">AR</div>
+<div class="mini-body">
+                        • إذا كان النوع Slip Blind (Demolish) يلزم اعتماد فورمان المعادن<br/>
+                        • الشهادة تبقى معلّقة حتى اكتمال الاعتماد
+                      </div>
+</div>
+</div>
+</div>
+</details>
+</div>
+</div>
+</section>
+<!-- WORKFLOW CONTROL (Admin) -->
+<section class="page hidden" id="workflowControlPage">
+<div class="page-header">
+<div class="page-title">Workflow Control</div>
+<div class="tiny">Single place to manage Phases, Roles, Permissions, Approvals &amp; Extra Approvals.</div>
+<div class="wf-top-controls">
+<div class="wf-toggle-group" id="wfLayoutToggle">
+<button class="btn small" id="wfLayoutHorizontalBtn" type="button">Horizontal</button>
+<button class="btn small" id="wfLayoutVerticalBtn" type="button">Vertical</button>
+</div>
+</div>
+</div>
+<div class="wf-grid">
+<!-- Left: phases -->
+<div class="wf-card">
+<div class="wf-card-head">
+<div class="wf-card-title">Phases</div>
+<button class="btn small" onclick="wfAddPhase()">+ Add</button>
+</div>
+<div class="wf-list" id="wfPhaseList"></div>
+<div class="wf-actions">
+<button class="btn ghost small" onclick="wfResetDefaults()">Reset defaults</button>
+</div>
+</div>
+<!-- Middle: phase settings -->
+<div class="wf-card">
+<div class="wf-card-head">
+<div class="wf-card-title">Phase Settings</div>
+<div class="wf-badge" id="wfSelectedPhaseBadge">—</div>
+</div>
+<div class="wf-section">
+<div class="wf-section-title">Phase Info</div>
+<div class="wf-row">
+<label class="wf-label">Name</label>
+<input class="wf-input" id="wfPhaseNameInput" placeholder="Phase name" type="text"/>
+</div>
+<div class="wf-row wf-row-inline">
+<label class="wf-label">Color</label>
+<div style="display:flex;align-items:center;gap:10px;flex:1">
+<input id="wfPhaseColorInput" style="width:44px;height:32px;border:0;background:transparent;padding:0" type="color" value="#2563eb">
+<div class="wf-muted" id="wfPhaseColorHex">#2563eb</div>
+<div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+<div class="wf-muted">Preview</div>
+<span id="wfPhaseColorPreview" style="width:14px;height:14px;border-radius:999px;background:#2563eb;display:inline-block;border:1px solid rgba(0,0,0,0.1)"></span>
+</div>
+</input></div>
+</div>
+<div class="wf-row wf-row-inline">
+<label class="wf-check"><input id="wfPhaseActiveChk" type="checkbox"/> Active</label>
+<div class="wf-muted" id="wfPhaseKeyText"></div>
+</div>
+</div>
+<div class="wf-section">
+<div class="wf-section-title">Who can UPDATE this phase?</div>
+<div class="wf-chips" id="wfCanUpdateChips"></div>
+<div class="tiny" style="margin-top:8px;">
+                  Missing a role/specialty? <button class="btn small" id="wfManageRolesLink" type="button">Manage Roles</button>
+</div>
+</div>
+<div class="wf-section">
+<div class="wf-section-title">Phase Approval</div>
+<label class="wf-check"><input id="wfApprovalEnabledChk" type="checkbox"/> Require approval for this phase</label>
+<div class="wf-muted">Select roles required (parallel).</div>
+<div class="wf-chips" id="wfApprovalRolesChips"></div>
+</div>
+<div class="wf-section">
+<div class="wf-section-title">Actions</div>
+<div class="wf-actions">
+<button class="btn small" onclick="wfSaveSelectedPhase()">Save</button>
+<button class="btn danger small" onclick="wfDisableSelectedPhase()">Disable</button>
+</div>
+</div>
+</div>
+<!-- Right: conditional final approvals (Slip Blind) -->
+<div class="wf-card">
+<div class="wf-card-head">
+<div class="wf-card-title">Conditional Final Approval</div>
+</div>
+<div class="wf-muted">Applies only when Blind Type = Slip Blind. This is NOT a phase.</div>
+<label class="wf-check" style="margin-top:10px">
+<input id="wfSlipRuleToggle" type="checkbox">
+    Require Metal Foreman confirmation (Reinstalled / Demolished)
+  </input></label>
+</div>
+<!-- Right: extra approvals -->
+<div class="wf-card">
+<div class="wf-card-head">
+<div class="wf-card-title">Extra Approvals</div>
+<label class="wf-check wf-right"><input id="wfExtraEnabledChk" type="checkbox"/> Enabled</label>
+</div>
+<div class="wf-muted">Optional per phase. Turn OFF to make none required.</div>
+<div class="wf-list" id="wfExtraList"></div>
+<div class="wf-actions">
+<button class="btn small" onclick="wfAddExtra()">+ Add Extra Approval</button>
+</div>
+</div>
+</div>
+<div class="wf-bottom">
+<button class="btn ghost" onclick="wfExport()">Export JSON</button>
+<button class="btn ghost" onclick="wfImport()">Import JSON</button>
+</div>
+</section>
+<!-- Reports Cards (Admin) -->
+<section class="page hidden" id="reportsCardsPage">
+<div class="page-header">
+<div class="page-title">Reports Cards</div>
+<div class="tiny">Admin controls: reorder + show/hide + presets. Used by Reports and Print/PDF.</div>
+</div>
+<div class="settings-section" id="reportsCardsSettingsSection">
+<label>Reports cards (Admin)</label>
+<div class="tiny">Drag to reorder. Toggle to show/hide. Changes apply instantly in Reports.</div>
+<div class="settings-actions">
+<button class="btn-neutral" onclick="applyReportsPreset('management')"><i class="ph ph-briefcase"></i> Preset: Management</button>
+<button class="btn-neutral" onclick="applyReportsPreset('safety')"><i class="ph ph-shield-check"></i> Preset: Safety</button>
+<button class="btn-neutral" onclick="resetReportsCardsDefaults()"><i class="ph ph-arrow-counter-clockwise"></i> Reset default</button>
+</div>
+<div aria-label="Reports cards control" class="cards-control-list" id="reportsCardsControl"></div>
+<div class="tiny" style="margin-top:8px;">Tip: Click a card in Reports to filter. Click again to clear.</div>
+</div>
+</section>
+</main>
+</div>
+</div>
+<!-- OVERLAY -->
+<div class="modal-overlay hidden" id="modalOverlay"></div>
+<!-- Training Info -->
+<div class="modal hidden" id="psInfoModal">
+<div class="modal-content">
+<div class="modal-header">
+<div class="modal-title">Project Settings — Instructions</div>
+<button class="icon-btn" onclick="closeModal('psInfoModal')" title="Close"><i class="ph ph-x"></i></button>
+</div>
+<div class="modal-body" style="line-height:1.8;">
+<div style="font-weight:800; margin-bottom:6px;">Phase Ownership</div>
+<div class="tiny muted">
+          Controls who can update each workflow phase inside this project.
+          Assign one or more owners per phase to ensure accountability and controlled updates.
+        </div>
+<div class="hr" style="margin:14px 0;"></div>
+<div style="font-weight:800; margin-bottom:6px;">Manage phases</div>
+<div class="tiny muted">
+          Opens the phase manager for this project (add/rename/enable phases based on your workflow).
+        </div>
+<div class="hr" style="margin:14px 0;"></div>
+<div style="font-weight:800; margin-bottom:6px;">Manage phase owners</div>
+<div class="tiny muted">
+          Assign owners to each phase. If Phase Ownership control is enabled, only the assigned owners can update that phase.
+        </div>
+<div class="hr" style="margin:14px 0;"></div>
+<div style="font-weight:800; margin-bottom:6px;">ملاحظة (Arabic)</div>
+<div class="tiny muted">
+          هذا القسم يحدد الأشخاص المخوّلين لتحديث كل فيزة داخل المشروع. قم بتعيين Owner لكل فيزة حسب الحاجة.
+        </div>
+</div>
+<div class="modal-footer">
+<button class="primary-btn" onclick="closeModal('psInfoModal')">OK</button>
+</div>
+</div>
+</div>
+<!-- Phase Ownership Requests (for non-admin users) -->
+<div class="modal hidden" id="psRequestModal">
+<div class="modal-content modal-wide">
+<div class="modal-head">
+<div>
+<h2 id="psRequestTitle">Request</h2>
+<div class="modal-sub" id="psRequestSub">Send a request to Admin/Supervisor.</div>
+</div>
+<button class="icon-btn" onclick="closeModal('psRequestModal')" title="Close"><i class="ph ph-x"></i></button>
+</div>
+<div class="modal-body" style="display:flex; flex-direction:column; gap:12px;">
+<div class="row" style="gap:10px; flex-wrap:wrap;">
+<div style="flex:1; min-width:220px;">
+<label class="tiny muted">Phase</label>
+<select class="auth-input" id="psReqPhase"></select>
+</div>
+<div style="flex:1; min-width:220px;">
+<label class="tiny muted">Needed specialty</label>
+<select class="auth-input" id="psReqSpecialty">
+<option value="">Auto</option>
+<option value="qaqc">QA/QC</option>
+<option value="foreman">Foreman</option>
+<option value="welding">Welding</option>
+<option value="inspection">Inspection</option>
+<option value="operation">Operation</option>
+</select>
+</div>
+</div>
+<div>
+<label class="tiny muted">Suggested person (optional)</label>
+<select class="auth-input" id="psReqSuggestedUser"></select>
+</div>
+<div>
+<label class="tiny muted">Reason</label>
+<textarea class="auth-input" id="psReqReason" placeholder="Write a short reason..." rows="3"></textarea>
+</div>
+<div class="tiny muted">
+          Requests are reviewed by Admin/Supervisor. You will receive a notification when your request is approved or rejected.
+        </div>
+</div>
+<div class="modal-actions">
+<button class="secondary-btn" onclick="closeModal('psRequestModal')">Cancel</button>
+<button class="primary-btn" onclick="submitPSRequest()">Send request</button>
+</div>
+</div>
+</div>
+<!-- Requests Inbox (Admin/Supervisor) -->
+<div class="modal hidden" id="requestsInboxModal">
+<div class="modal-content modal-wide">
+<div class="modal-head">
+<div>
+<h2>Requests Inbox</h2>
+<div class="modal-sub">Approve or reject requests from users (Phase Owner change / Assistance).</div>
+</div>
+<button class="icon-btn" onclick="closeModal('requestsInboxModal')" title="Close"><i class="ph ph-x"></i></button>
+</div>
+<div class="modal-body" style="display:flex; flex-direction:column; gap:10px;">
+<div class="row" style="gap:10px; flex-wrap:wrap; align-items:center;">
+<input class="input" id="reqInboxSearch" oninput="renderRequestsInbox()" placeholder="Search requests..." style="min-width:240px;" type="text">
+<select class="auth-input" id="reqInboxStatus" onchange="renderRequestsInbox()" style="min-width:160px;">
+<option value="pending">Pending</option>
+<option value="all">All</option>
+<option value="approved">Approved</option>
+<option value="rejected">Rejected</option>
+</select>
+<select class="auth-input" id="reqInboxProject" onchange="renderRequestsInbox()" style="min-width:200px;"></select>
+</input></div>
+<div class="notif-list" id="requestsInboxList"></div>
+</div>
+<div class="modal-actions">
+<button class="secondary-btn" onclick="closeModal('requestsInboxModal')">Close</button>
+</div>
+</div>
+</div>
+<div class="modal hidden" id="trainingInfoModal">
+<div class="modal-content">
+<div class="modal-head">
+<div>
+<h2>Training page – Instructions</h2>
+<div class="modal-sub">This setting is controlled by Admin only and affects all users.</div>
+</div>
+<button class="icon-btn" onclick="closeModal('trainingInfoModal')" title="Close"><i class="ph ph-x"></i></button>
+</div>
+<div class="tiny" style="line-height:1.6; font-size:13px;">
+<div style="font-weight:700; margin-bottom:6px;">What this does</div>
+<ul style="margin:0 0 10px 18px; padding:0;">
+<li>When ON: the <b>Training</b> page appears in the sidebar for all users.</li>
+<li>When OFF: the <b>Training</b> page is hidden from the sidebar (content stays محفوظ).</li>
+</ul>
+<div style="font-weight:700; margin-bottom:6px;">Recommended use</div>
+<ul style="margin:0 0 10px 18px; padding:0;">
+<li>Turn ON during onboarding / training sessions.</li>
+<li>Turn OFF after deployment to keep the sidebar clean.</li>
+</ul>
+<div style="font-weight:700; margin-bottom:6px;">Notes</div>
+<ul style="margin:0 0 0 18px; padding:0;">
+<li>Only Admin can change this toggle.</li>
+<li>This is saved locally with the system state.</li>
+</ul>
+</div>
+<div class="modal-actions">
+<button class="primary-btn" onclick="closeModal('trainingInfoModal')">OK</button>
+</div>
+</div>
+</div>
+<div class="modal hidden" id="backupInfoModal">
+<div class="modal-content">
+<div class="modal-head">
+<div>
+<h2>Backup &amp; Restore – Instructions</h2>
+<div class="modal-sub">Admin only. Backup is local now; Supabase hooks are prepared for later.</div>
+</div>
+<button class="icon-btn" onclick="closeModal('backupInfoModal')" title="Close"><i class="ph ph-x"></i></button>
+</div>
+<div class="tiny" style="line-height:1.6; font-size:13px;">
+<div style="font-weight:700; margin-bottom:6px;">Manual backup</div>
+<ul style="margin:0 0 10px 18px; padding:0;">
+<li><b>Create backup now</b> downloads a JSON file containing SBTS state and settings.</li>
+<li>Store the file in a safe place (e.g., OneDrive/Drive/USB) for recovery.</li>
+</ul>
+<div style="font-weight:700; margin-bottom:6px;">Restore</div>
+<ul style="margin:0 0 10px 18px; padding:0;">
+<li><b>Restore backup</b> replaces SBTS data keys in this browser with the backup file.</li>
+<li>A double confirmation is required to prevent mistakes.</li>
+</ul>
+<div style="font-weight:700; margin-bottom:6px;">Weekly local backup</div>
+<ul style="margin:0 0 0 18px; padding:0;">
+<li>When ON: SBTS saves the last 10 weekly backups inside the browser (no internet required).</li>
+<li>This is a safety net; it does not replace the manual JSON file backup.</li>
+</ul>
+</div>
+<div class="modal-actions">
+<button class="primary-btn" onclick="closeModal('backupInfoModal')">OK</button>
+</div>
+</div>
+</div>
+<!-- Notifications Drawer -->
+<div class="drawer-overlay hidden" id="notifDrawerOverlay" onclick="closeNotificationsDrawer()"></div>
+<aside aria-label="Notifications" class="drawer hidden" id="notifDrawer">
+<div class="drawer-head">
+<div>
+<div class="drawer-head-row">
+<h2 style="margin:0;">Notification Center</h2>
+<div class="drawer-actions">
+<button class="btn-secondary btn-small" onclick="markAllNotificationsRead(); renderNotificationsDrawer();">Mark all read</button>
+<button aria-label="Close" class="icon-btn" onclick="closeNotificationsDrawer()"><i class="ph ph-x"></i></button>
+</div>
+</div>
+<div class="tiny" id="notifDrawerSub">Inbox &amp; updates • smart filter by current project</div>
+</div>
+</div>
+<div class="drawer-toolbar">
+<div class="drawer-tabs">
+<button class="tab-btn" id="notifDT_inbox" onclick="setNotifDrawerTab('inbox')">Inbox <span class="tab-count" id="notifTabCount_inbox">0</span></button>
+<button class="tab-btn" id="notifDT_updates" onclick="setNotifDrawerTab('updates')">Updates <span class="tab-count" id="notifTabCount_updates">0</span></button>
+<button class="tab-btn" id="notifDT_done" onclick="setNotifDrawerTab('done')">Done <span class="tab-count" id="notifTabCount_done">0</span></button>
+</div>
+<div class="drawer-filters">
+<div class="chip-group" id="notifProjectFilterChips">
+<button class="chip" id="notifPF_current" onclick="setNotifProjectFilter('current')">Current project</button>
+<button class="chip" id="notifPF_all" onclick="setNotifProjectFilter('all')">All projects</button>
+</div>
+<input class="input notif-search" id="notifDrawerSearch" oninput="renderNotificationsDrawer()" placeholder="Search…" type="text">
+</input></div>
+</div>
+<div class="drawer-body">
+<div class="notif-list" id="notifDrawerList"></div>
+</div>
+<div class="drawer-foot">
+<button class="secondary-btn" onclick="openPage('notificationsPage'); closeNotificationsDrawer();">Open full center</button>
+<button class="primary-btn" onclick="clearResolvedNotifications()">Clear done</button>
+</div>
+</aside>
+<!-- MODALS -->
+<!-- Add/Edit Area -->
+<div class="modal hidden" id="addAreaModal">
+<div class="modal-content">
+<h2 id="areaModalTitle">Add area</h2>
+<label>Area name</label>
+<input id="addAreaName" placeholder="Area name" type="text">
+<div class="modal-actions">
+<button class="secondary-btn" onclick="closeModal('addAreaModal')">Cancel</button>
+<button class="primary-btn" onclick="confirmAddArea()">Save</button>
+</div>
+</input></div>
+</div>
+<!-- Add/Edit Project -->
+<div class="modal hidden" id="addProjectModal">
+<div class="modal-content modal-wide">
+<div class="modal-head">
+<div>
+<h2 id="projectModalTitle">Add project</h2>
+<div class="modal-sub">Fill basic info then confirm. Preview updates live.</div>
+</div>
+<button class="icon-btn" onclick="closeModal('addProjectModal')" title="Close">✕</button>
+</div>
+<div class="form-grid">
+<div class="form-card">
+<label>Area</label>
+<select id="addProjectAreaSelect" onchange="updateProjectPreview()"></select>
+<label>Project name</label>
+<input id="addProjectName" oninput="updateProjectPreview()" placeholder="e.g. Area - unit3" type="text">
+<label>Project code (optional)</label>
+<input id="addProjectCode" oninput="updateProjectPreview()" placeholder="e.g. PRJ-2025-01" type="text">
+<label>Description (optional)</label>
+<input id="addProjectDesc" oninput="updateProjectPreview()" placeholder="Short description" type="text">
+<div class="modal-actions">
+<button class="secondary-btn" onclick="closeModal('addProjectModal')">Cancel</button>
+<button class="primary-btn" onclick="confirmAddProject()">Save</button>
+</div>
+</input></input></input></div>
+<div class="preview-card">
+<div class="preview-title">Live preview</div>
+<div class="preview-box">
+<div class="preview-row"><span class="k">Area</span><span class="v" id="pvArea">-</span></div>
+<div class="preview-row"><span class="k">Project</span><span class="v" id="pvName">-</span></div>
+<div class="preview-row"><span class="k">Code</span><span class="v" id="pvCode">-</span></div>
+<div class="preview-row"><span class="k">Description</span><span class="v" id="pvDesc">-</span></div>
+</div>
+<div class="preview-hint">Tip: keep project name short + clear. You can edit later.</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Add Single Blind -->
+<div class="modal hidden" id="addSingleBlindModal">
+<div class="modal-content">
+<h2>Add blind</h2>
+<label>Blind name</label>
+<input id="singleBlindName" placeholder="BL-111" type="text">
+<label>Line/Equipment</label>
+<input id="singleBlindLine" placeholder="D-111" type="text">
+<label>Type</label>
+<select class="auth-input" id="singleBlindType">
+<option value="Isolation Blind">Isolation Blind</option>
+<option value="Drop Spool">Drop Spool</option>
+<option value="Slip Blind">Slip Blind</option>
+</select>
+<div class="two-col">
+<div>
+<label>Size</label>
+<input id="singleBlindSize" placeholder='e.g. 6" / DN150' type="text">
+</input></div>
+<div>
+<label>Rate</label>
+<input id="singleBlindRate" placeholder="e.g. 300#" type="text"/>
+</div>
+</div>
+<div class="modal-actions">
+<button class="secondary-btn" onclick="closeModal('addSingleBlindModal')">Cancel</button>
+<button class="primary-btn" onclick="confirmAddSingleBlind()">Add</button>
+</div>
+</input></input></div>
+</div>
+<!-- Bulk Add Blinds -->
+<div class="modal hidden" id="bulkAddBlindsModal">
+<div class="modal-content modal-wide">
+<h2>Bulk add blinds</h2>
+<p class="modal-note">Add multiple blinds quickly using a simple table.</p>
+<div class="page-actions" style="margin-bottom:10px;">
+<button class="btn-neutral" onclick="addBulkBlindRow()"><i class="ph ph-plus"></i> Add row</button>
+</div>
+<table class="main-table">
+<thead>
+<tr>
+<th>#</th>
+<th>Blind name</th>
+<th>Line</th>
+<th>Type</th>
+<th>Size</th>
+<th>Rate</th>
+<th>Remove</th>
+</tr>
+</thead>
+<tbody id="bulkBlindsTableBody"></tbody>
+</table>
+<div class="modal-actions">
+<button class="secondary-btn" onclick="closeModal('bulkAddBlindsModal')">Cancel</button>
+<button class="primary-btn" onclick="confirmBulkAddBlinds()">Add blinds</button>
+</div>
+</div>
+</div>
+<!-- MOBILE: BLIND MORE (Details) -->
+<div class="modal hidden" id="blindMoreModal">
+<div class="modal-content" style="max-width:520px;">
+<div class="modal-header">
+<div>
+<div class="modal-title" id="blindMoreTitle">Blind</div>
+<div class="tiny muted" id="blindMoreSub">-</div>
+</div>
+<div class="modal-header-actions">
+<button class="icon-btn" onclick="closeModal('blindMoreModal')"><i class="ph ph-x"></i></button>
+</div>
+</div>
+<div class="modal-body" id="blindMoreBody" style="display:grid; gap:10px;"></div>
+<div class="modal-footer" style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
+<button class="secondary-btn" onclick="closeModal('blindMoreModal')">Close</button>
+<button class="primary-btn" id="blindMoreOpenBtn">Open</button>
+</div>
+</div>
+</div>
+<!-- MOBILE: BLIND QR VIEW -->
+<div class="modal hidden" id="blindQrModal">
+<div class="modal-content" style="max-width:520px;">
+<div class="modal-header">
+<div class="modal-title">Blind QR</div>
+<div class="modal-header-actions">
+<button class="icon-btn" onclick="closeModal('blindQrModal')"><i class="ph ph-x"></i></button>
+</div>
+</div>
+<div class="modal-body" style="display:grid; gap:12px;">
+<img alt="QR" class="qr-img" id="blindQrModalImg" style="width:100%; max-width:320px; margin:0 auto;"/>
+<div class="tiny muted" style="text-align:center;">Scan to open the blind visitor page.</div>
+<div class="qr-link" id="blindQrModalLink" style="text-align:center; word-break:break-all;">-</div>
+<div style="display:flex; justify-content:center;">
+<button class="secondary-btn" onclick="copyBlindQrModalLink()"><i class="ph ph-copy"></i> Copy link</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Change Phase -->
+<div class="modal hidden" id="changePhaseModal">
+<div class="modal-content">
+<h2>Change phase</h2>
+<p class="modal-note">Workflow rules apply automatically based on your role.</p>
+<label>New phase</label>
+<select id="changePhaseSelect"></select>
+<label>Worker name</label>
+<input id="changePhaseTechName" placeholder="Name" type="text"/>
+<label>Worker ID</label>
+<input id="changePhaseTechId" placeholder="ID" type="text"/>
+<div class="modal-actions">
+<button class="secondary-btn" onclick="closeModal('changePhaseModal')">Cancel</button>
+<button class="primary-btn" onclick="confirmChangePhase()">Save</button>
+</div>
+</div>
+</div>
+<!-- Final approvals -->
+<div class="modal hidden" id="approvalsModal">
+<div class="modal-content">
+<h2>Final approvals</h2>
+<p class="modal-note">These approvals are required after finishing all phases.</p>
+<div class="approval-box" id="finalApprovalsBox"></div>
+</div>
+<div class="modal-actions">
+<button class="secondary-btn" onclick="closeModal('approvalsModal')">Close</button>
+</div>
+</div>
+
+<!-- Edit Permissions -->
+<div class="modal hidden" id="editPermissionsModal">
+<div class="modal-content modal-wide">
+<h2>Edit permissions</h2>
+<p class="modal-note">Admin can enable/disable permissions at any time.</p>
+<div class="tiny" id="editPermissionsUserInfo"></div>
+<table class="permissions-matrix">
+<thead>
+<tr>
+<th>Permission</th>
+<th>Allow</th>
+</tr>
+</thead>
+<tbody id="permissionsMatrixBody"></tbody>
+</table>
+<div class="modal-actions">
+<button class="secondary-btn" onclick="closeModal('editPermissionsModal')">Cancel</button>
+<button class="primary-btn" onclick="saveUserPermissions()">Save</button>
+</div>
+</div>
+</div>
+<!-- Phase confirm modal -->
+<div class="modal hidden" id="phaseConfirmModal">
+<div class="modal-content">
+<h2>Confirm phase change</h2>
+<div class="confirm-grid">
+<div class="confirm-row"><span class="confirm-label">Blind</span><span class="confirm-value" id="pc_blindName">-</span></div>
+<div class="confirm-row"><span class="confirm-label">From</span><span class="confirm-value" id="pc_fromPhase">-</span></div>
+<div class="confirm-row"><span class="confirm-label">To</span><span class="confirm-value" id="pc_toPhase">-</span></div>
+<div class="confirm-row"><span class="confirm-label">By</span><span class="confirm-value" id="pc_workerName">-</span></div>
+</div>
+<div class="settings-section" style="margin-top:12px;">
+<label>Signature ID / Badge No *</label>
+<input class="auth-input" id="pc_signatureId" placeholder="Enter ID" type="text"/>
+<div class="tiny">This will be saved in the History log as a signature.</div>
+</div>
+<div class="modal-actions">
+<button class="secondary-btn" onclick="cancelPhaseConfirm()">Cancel</button>
+<button class="primary-btn" onclick="confirmPhaseConfirm()">Confirm</button>
+</div>
+</div>
+</div>
+<!-- Phase Ownership Modal (Project-level) -->
+<div aria-hidden="true" class="ps-overlay" id="psOverlay"></div>
+<div aria-hidden="true" aria-label="Phase ownership" class="ps-modal" id="psModal" role="dialog">
+<div class="ps-modal-head">
+<div>
+<div class="ps-modal-title">Role Assignment</div>
+<div class="ps-modal-sub" id="psModalSub">Assign specific users to project phases</div>
+</div>
+<button class="icon-btn" onclick="closePhaseOwnershipModal()" type="button">✕</button>
+</div>
+<div class="ps-modal-body">
+<div class="ps-tabs">
+<button class="ps-tab active" id="psTabOwners" onclick="psSwitchTab('owners')" type="button">Owners</button>
+<button class="ps-tab" id="psTabActivation" onclick="psSwitchTab('activation')" type="button">Activation</button>
+</div>
+<div id="psTabPanelOwners">
+<div class="ps-phase-owner-list" id="psPhaseOwnerList"></div>
+</div>
+<div id="psTabPanelActivation" style="display:none;">
+<div class="row" style="gap:10px; align-items:center; flex-wrap:wrap;">
+<input class="input" id="phaseActSearch" placeholder="Search phases…" style="flex:1; min-width:220px;"/>
+<button class="secondary-btn" onclick="phaseActSetAll(true)" type="button">Enable all</button>
+<button class="secondary-btn" onclick="phaseActSetAll(false)" type="button">Disable all</button>
+</div>
+<div class="table-wrap" style="margin-top:12px;">
+<table class="table">
+<thead>
+<tr>
+<th>Phase</th>
+<th style="width:120px;">Blinds</th>
+<th style="width:140px;">Status</th>
+<th style="width:120px;">Enabled</th>
+</tr>
+</thead>
+<tbody id="phaseActTbody"></tbody>
+</table>
+</div>
+<div class="tiny muted" style="margin-top:10px; line-height:1.7">
+          Tip: Disabled phases keep history (no data loss).
+        </div>
+</div>
+</div>
+<div class="ps-modal-foot">
+<button class="secondary-btn" onclick="closePhaseOwnershipModal()" type="button">Cancel</button>
+<button class="btn" onclick="saveProjectPhaseOwners()" type="button">Save</button>
+</div>
+</div>
+<!-- Final Approvals Manager: Edit Modal -->
+<div class="sbts-modal-overlay" id="famEditOverlay" style="display:none;">
+<div class="sbts-modal fam-edit-modal">
+<div class="sbts-modal-header">
+<div>
+<div class="sbts-modal-title">Edit approval</div>
+<div class="sbts-modal-sub">Edit details without changing the ID. Changes affect policy immediately (Safe Mode).</div>
+</div>
+<button aria-label="Close" class="icon-btn" id="famEditCloseBtn">✕</button>
+</div>
+<div class="sbts-modal-body">
+<div class="fam-edit-tabs">
+<button class="fam-tab active" data-tab="general">General</button>
+<button class="fam-tab" data-tab="rules">Approval rules</button>
+<button class="fam-tab" data-tab="who">Who can approve</button>
+</div>
+<div class="fam-edit-panels">
+<div class="fam-panel active" data-panel="general">
+<div class="form-grid">
+<div class="form-field">
+<label>Name</label>
+<input class="input" id="famEditName" placeholder="e.g., QA/QC approval">
+<div class="tiny muted">Display label shown in Final approvals and certificates.</div>
+</input></div>
+<div class="form-field">
+<label>Applies to</label>
+<select class="input" id="famEditApplies">
+<option value="all">All</option>
+<option value="slip">Slip</option>
+<option value="isolation">Isolation</option>
+</select>
+<div class="tiny muted">Scope by blind type.</div>
+</div>
+<div class="form-field">
+<label>ID (locked)</label>
+<input class="input" disabled="" id="famEditId"/>
+<div class="tiny muted">ID is used in history and must not change.</div>
+</div>
+</div>
+</div>
+<div class="fam-panel" data-panel="rules">
+<div class="form-grid">
+<div class="form-field">
+<label>Required</label>
+<label class="switch">
+<input id="famEditRequired" type="checkbox"/>
+<span class="slider"></span>
+</label>
+<div class="tiny muted">Required = must be completed to close the blind.</div>
+</div>
+<div class="form-field">
+<label>Order</label>
+<input class="input" id="famEditOrder" min="0" step="1" type="number">
+<div class="tiny muted">Controls display &amp; sequence (10, 20, 30...).</div>
+</input></div>
+</div>
+</div>
+<div class="fam-panel" data-panel="who">
+<div class="form-field">
+<label>Roles allowed to approve</label>
+<div class="fam-roles-wrap" id="famEditRolesWrap"></div>
+<div class="tiny muted">Any user with one of these roles can approve.</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sbts-modal-footer">
+<button class="secondary-btn" id="famEditCancelBtn">Cancel</button>
+<button class="primary-btn" id="famEditSaveBtn">Save changes</button>
+</div>
+</div>
+</div>
+<!-- Print Project Certificates Picker -->
+<div class="modal hidden" id="printCertsModal">
+<div class="modal-content pc-resizable" style="max-width:920px;">
+<div class="modal-header">
+<div class="modal-title">Print Project Certificates</div>
+<div class="modal-header-actions">
+<button class="icon-btn" onclick="pcTogglePrintCertsMax()" title="Maximize / Restore">
+<i class="ph ph-arrows-out"></i>
+</button>
+<button class="icon-btn" onclick="closeModal('printCertsModal')" title="Close"><i class="ph ph-x"></i></button>
+</div>
+</div>
+<div class="modal-body">
+<div id="printCertsSummary"></div>
+<div class="pc-filterbar">
+<div class="pc-filter-left">
+<input class="input" id="printCertsSearch" placeholder="Search blind name..." type="text"/>
+<select class="input" id="printCertsView">
+<option value="all">Show: All</option>
+<option value="approved">Show: Approved</option>
+<option value="pending">Show: Pending</option>
+</select>
+<select class="input" id="printCertsSort">
+<option value="name_asc">Sort: Name A→Z</option>
+<option value="name_desc">Sort: Name Z→A</option>
+<option value="status">Sort: Approved first</option>
+<option value="phase">Sort: Phase</option>
+</select>
+</div>
+<div class="pc-filter-right tiny muted">
+            Tip: You can resize this window from the bottom-right corner.
+          </div>
+</div>
+<div style="display:flex; gap:8px; flex-wrap:wrap; margin:14px 0 10px;">
+<button class="btn" onclick="pcSelectAll(true)" type="button">Select all</button>
+<button class="btn" onclick="pcSelectAll(false)" type="button">Clear</button>
+<button class="btn" onclick="pcSelectApproved()" type="button">Approved only</button>
+<button class="btn" onclick="pcSelectPending()" type="button">Pending only</button>
+</div>
+<div class="pc-list" id="printCertsList"></div>
+</div>
+<div class="modal-footer" style="display:flex; justify-content:flex-end; gap:10px;">
+<button class="btn ghost" onclick="closeModal('printCertsModal')" type="button">Cancel</button>
+<button class="btn primary" onclick="pcPrintSelected()" type="button"><i class="ph ph-printer"></i> Print selected</button>
+</div>
+</div>
+</div>
+<!-- Create Request Modal (Inbox) -->
+<div aria-label="Create request" aria-modal="true" class="modal hidden" id="reqCreateModal" role="dialog">
+<div class="modal-content" style="max-width:760px;">
+<div class="modal-header">
+<h3 style="margin:0;">Create Request</h3>
+<button aria-label="Close" class="icon-btn" onclick="closeModal('reqCreateModal')">✕</button>
+</div>
+<div class="modal-body">
+<div class="grid-2">
+<div>
+<label class="tiny">Request type</label>
+<select class="input" id="reqCreateType"></select>
+</div>
+<div>
+<label class="tiny">Project</label>
+<select class="input" id="reqCreateProject"></select>
+</div>
+<div>
+<label class="tiny">Blind (optional)</label>
+<select class="input" id="reqCreateBlind"></select>
+</div>
+<div>
+<label class="tiny">Phase (optional)</label>
+<select class="input" id="reqCreatePhase"></select>
+</div>
+<div>
+<label class="tiny">Target user (optional)</label>
+<input class="input" id="reqCreateTargetUser" placeholder="e.g., Ahmed (Supervisor)"/>
+</div>
+<div>
+<label class="tiny">Priority</label>
+<select class="input" id="reqCreatePriority">
+<option value="normal">Normal</option>
+<option value="high">High</option>
+</select>
+</div>
+</div>
+<div style="margin-top:10px;">
+<label class="tiny">Reason / details</label>
+<textarea class="input" id="reqCreateReason" placeholder="Write a short reason..." rows="3"></textarea>
+</div>
+<div class="tiny" style="margin-top:10px;opacity:.75;">
+        Tip: Requests appear in <b>Inbox</b> and can be approved/rejected with comments.
+      </div>
+</div>
+<div class="modal-actions">
+<button class="btn" onclick="closeModal('reqCreateModal')">Cancel</button>
+<button class="primary-btn" id="reqCreateSubmitBtn">Create request</button>
+</div>
+</div>
+</div>
+<!-- Assign Projects Modal (46.5.1) -->
+<div class="modal hidden" id="assignProjectsModal">
+<div class="modal-content" style="max-width:720px;">
+<div class="modal-header">
+<h3 style="margin:0;">Assign Projects</h3>
+<button class="modal-close" onclick="closeModal('assignProjectsModal')">×</button>
+</div>
+<div class="modal-body">
+<div class="tiny" id="assignProjectsUserLine" style="margin-bottom:10px;"></div>
+<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">
+<input class="input" id="assignProjectsSearch" oninput="renderAssignProjectsList()" placeholder="Search projects..." style="min-width:260px;" type="text"/>
+<button class="btn-neutral" onclick="toggleAssignProjectsSelectAll(true)">Select all</button>
+<button class="btn-neutral" onclick="toggleAssignProjectsSelectAll(false)">Clear</button>
+</div>
+<div id="assignProjectsList" style="max-height:340px;overflow:auto;border:1px solid rgba(0,0,0,.08);border-radius:12px;padding:10px;background:#fff;"></div>
+<div class="tiny" style="margin-top:10px;opacity:.85;">
+        Tip: A user can be assigned to multiple projects. Approval activates the account; assignment controls access (future-ready).
+      </div>
+</div>
+<div class="modal-footer" style="display:flex;justify-content:flex-end;gap:10px;">
+<button class="btn-neutral" onclick="closeModal('assignProjectsModal')">Cancel</button>
+<button class="primary-btn" onclick="saveAssignProjects()">Save assignments</button>
+</div>
+</div>
+</div>
+<script>
+    // SBTS boot diagnostics: avoid blank page if files are missing
+    (function(){
+      const t0 = Date.now();
+      setTimeout(function(){
+        // if app.js failed to load, sbtsBoot won't exist
+        if (typeof window.sbtsBoot !== "function") {
+          const box = document.createElement("div");
+          box.style.position="fixed";box.style.inset="16px";box.style.zIndex="99999";
+          box.style.background="#111827";box.style.color="#fff";box.style.borderRadius="14px";
+          box.style.padding="14px 16px";box.style.boxShadow="0 12px 40px rgba(0,0,0,.35)";
+          box.innerHTML = "<div style='font-weight:800;margin-bottom:6px'>SBTS لم يبدأ</div>"
+            + "<div style='opacity:.92;margin-bottom:8px'>يبدو أن <b>app.js</b> لم يتم تحميله (ملف ناقص أو لم يتم فك الضغط بشكل صحيح).</div>"
+            + "<div style='opacity:.8;line-height:1.5'>الحل: فك الضغط بالكامل داخل مجلد ثابت، ثم شغّل عبر <b>localhost</b> (Live Server أو python http.server). وتأكد أن الملفات <b>index.html / app.js / styles.css / config.js</b> موجودة بنفس المجلد.</div>";
+          document.body.appendChild(box);
+        }
+      }, 900);
+    })();
+  </script>
+<!-- App -->
+<script src="app.js"></script>
+</body>
+</html>
